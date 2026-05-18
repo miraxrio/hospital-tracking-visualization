@@ -24,6 +24,12 @@ export default function CityModel({ onModelReady }) {
     if (!scene || !wrapperRef.current || initialized.current) return
     initialized.current = true
 
+    // Rotate the city 90° around Y so the mountains (which stay at world -Z)
+    // end up behind a different face of the city. Done on the inner scene
+    // before computing the bbox so the rest of the centring logic still works.
+    scene.rotation.y = Math.PI / 2
+    scene.updateMatrixWorld(true)
+
     // Mark mesh shadow flags + collect cloud groups for animation.
     const clouds = []
     scene.traverse((obj) => {
