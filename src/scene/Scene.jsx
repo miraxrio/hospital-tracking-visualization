@@ -9,6 +9,7 @@ import Ground from './Ground.jsx'
 import StaffSimulation from './StaffSimulation.jsx'
 import Elevators from './Elevators.jsx'
 import Lounges from './Lounges.jsx'
+import SimSky from './SimSky.jsx'
 
 function CameraRig() {
   const selectedFloorId = useStore((s) => s.selectedFloorId)
@@ -113,24 +114,12 @@ export default function Scene() {
       camera={{ position: [16, 9, 16], fov: 45, near: 0.1, far: 200 }}
       onPointerMissed={() => closePanel()}
     >
-      <color attach="background" args={['#050810']} />
-      <fog attach="fog" args={['#050810', 45, 110]} />
+      {/* Time-of-day sky drives background, fog, sun, and ambient */}
+      <SimSky fogNear={45} fogFar={110} sunPos={[12, 18, 10]} shadowExtent={20} />
 
-      {/* Lights */}
-      <ambientLight intensity={0.45} />
-      <directionalLight
-        position={[12, 18, 10]}
-        intensity={1.1}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
-      />
-      <directionalLight position={[-10, 8, -8]} intensity={0.35} color="#7dd3fc" />
-      <pointLight position={[0, 12, 0]} intensity={0.4} color="#a5b4fc" />
+      {/* Constant accent fills so faces of buildings keep some color at night */}
+      <directionalLight position={[-10, 8, -8]} intensity={0.25} color="#7dd3fc" />
+      <pointLight position={[0, 12, 0]} intensity={0.25} color="#a5b4fc" />
 
       <Environment preset="city" />
 

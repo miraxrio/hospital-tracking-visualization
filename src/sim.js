@@ -170,3 +170,56 @@ export function onDutyCount(minutes) {
     0,
   )
 }
+
+// Sky / sun / ambient colors and intensities keyed by minutes-since-midnight.
+// Interpolated linearly between adjacent keys so the sky shifts smoothly as
+// simulated time advances.
+const SKY_KEYS = [
+  { t: 0,    sky: '#0a0e1f', fog: '#0a0e1f', sun: '#3b4660', amb: '#1e3a8a', sunI: 0.25, ambI: 0.35 },
+  { t: 300,  sky: '#0a0e1f', fog: '#0a0e1f', sun: '#3b4660', amb: '#1e3a8a', sunI: 0.25, ambI: 0.35 },
+  { t: 330,  sky: '#2c1b3d', fog: '#2c1b3d', sun: '#8b5cf6', amb: '#4338ca', sunI: 0.4,  ambI: 0.45 },
+  { t: 390,  sky: '#fb923c', fog: '#fdba74', sun: '#fb923c', amb: '#fde68a', sunI: 0.8,  ambI: 0.55 },
+  { t: 450,  sky: '#fbbf24', fog: '#fef3c7', sun: '#fde047', amb: '#fef3c7', sunI: 1.0,  ambI: 0.6  },
+  { t: 540,  sky: '#87ceeb', fog: '#dbeafe', sun: '#fef9c3', amb: '#ffffff', sunI: 1.2,  ambI: 0.6  },
+  { t: 720,  sky: '#4ea8de', fog: '#dbeafe', sun: '#ffffff', amb: '#ffffff', sunI: 1.4,  ambI: 0.65 },
+  { t: 900,  sky: '#79b8ec', fog: '#dbeafe', sun: '#fef9c3', amb: '#ffffff', sunI: 1.3,  ambI: 0.6  },
+  { t: 1020, sky: '#fbbf24', fog: '#fef3c7', sun: '#fde047', amb: '#fef3c7', sunI: 1.0,  ambI: 0.55 },
+  { t: 1080, sky: '#fb923c', fog: '#fdba74', sun: '#fb923c', amb: '#fde68a', sunI: 0.7,  ambI: 0.5  },
+  { t: 1140, sky: '#ef4444', fog: '#fda4af', sun: '#fb923c', amb: '#fca5a5', sunI: 0.5,  ambI: 0.45 },
+  { t: 1200, sky: '#2c1b3d', fog: '#2c1b3d', sun: '#8b5cf6', amb: '#4338ca', sunI: 0.3,  ambI: 0.4  },
+  { t: 1320, sky: '#0a0e1f', fog: '#0a0e1f', sun: '#3b4660', amb: '#1e3a8a', sunI: 0.25, ambI: 0.35 },
+  { t: 1440, sky: '#0a0e1f', fog: '#0a0e1f', sun: '#3b4660', amb: '#1e3a8a', sunI: 0.25, ambI: 0.35 },
+]
+
+const _ca = new THREE.Color()
+const _cb = new THREE.Color()
+
+function lerpHex(a, b, t) {
+  _ca.setStyle(a)
+  _cb.setStyle(b)
+  return '#' + _ca.lerp(_cb, t).getHexString()
+}
+
+function lerpNum(a, b, t) {
+  return a + (b - a) * t
+}
+
+export function skyAppearance(minutes) {
+  const m = ((minutes % 1440) + 1440) % 1440
+  for (let i = 0; i < SKY_KEYS.length - 1; i++) {
+    const a = SKY_KEYS[i]
+    const b = SKY_KEYS[i + 1]
+    if (m >= a.t && m < b.t) {
+      const tt = (m - a.t) / (b.t - a.t)
+      return {
+        sky: lerpHex(a.sky, b.sky, tt),
+        fog: lerpHex(a.fog, b.fog, tt),
+        sun: lerpHex(a.sun, b.sun, tt),
+        amb: lerpHex(a.amb, b.amb, tt),
+        sunI: lerpNum(a.sunI, b.sunI, tt),
+        ambI: lerpNum(a.ambI, b.ambI, tt),
+      }
+    }
+  }
+  return { ...SKY_KEYS[0] }
+}

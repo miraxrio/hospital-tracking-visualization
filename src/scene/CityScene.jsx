@@ -3,6 +3,7 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
 import CityModel from './CityModel.jsx'
+import SimSky from './SimSky.jsx'
 
 const HOME_POS = new THREE.Vector3(45, 35, 45)
 
@@ -55,22 +56,8 @@ export default function CityScene() {
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       camera={{ position: HOME_POS.toArray(), fov: 45, near: 0.1, far: 1000 }}
     >
-      <color attach="background" args={['#79b8ec']} />
-
-      <ambientLight intensity={0.7} />
-      <hemisphereLight args={['#cfe9ff', '#3b6b8a', 0.55]} />
-      <directionalLight
-        position={[40, 60, 30]}
-        intensity={1.4}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-left={-60}
-        shadow-camera-right={60}
-        shadow-camera-top={60}
-        shadow-camera-bottom={-60}
-      />
-      <directionalLight position={[-20, 18, -18]} intensity={0.4} color="#bae6fd" />
+      {/* Time-of-day sky drives the city background, sun, and ambient too */}
+      <SimSky sunPos={[40, 60, 30]} shadowExtent={60} multiplier={1.3} />
 
       <Environment preset="park" />
 
