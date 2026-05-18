@@ -6,9 +6,10 @@ import { useStore } from '../store.js'
 
 const MODEL_URL = `${import.meta.env.BASE_URL}models/low_poly_city.glb`
 const HOSPITAL_NODE_NAME = '(base) hospital'
-// Tight reference mesh inside (base) hospital — used to size the hitbox without
-// being pulled around by outlier children (rooftop signs, decorations).
-const HOSPITAL_REF_MESH = 'Cube.055_Colore_0'
+// The hospital's transform origin sits on the street in front of the building.
+// Plane.014_Colore_0 is the rooftop helipad — its geometry IS the building center,
+// so we anchor the marker/camera/hitbox to it (the user's suggested reference).
+const HOSPITAL_REF_MESH = 'Plane.014_Colore_0'
 const TARGET_CITY_SIZE = 90
 
 useGLTF.preload(MODEL_URL)
@@ -76,42 +77,45 @@ export default function CityModel({ onHospitalClick, onModelReady }) {
     wrapperRef.current.updateMatrixWorld(true)
 
     // 4. Hospital pose in world space.
+    //    Anchor to Plane.014_Colore_0 (the rooftop helipad) — its geometry sits
+    //    exactly on the building, unlike the (base) hospital node whose transform
+    //    origin is offset onto the street.
     let hCenter = new THREE.Vector3()
     let hSize = new THREE.Vector3()
     let hTop = new THREE.Vector3()
     let hMin = new THREE.Vector3()
 
-    if (hospitalNode) {
-      // Anchor X/Z to the hospital node's transform position — that's exactly
-      // where the user expects the marker to be ("look at base hospital position").
+    if (refMesh) {
+      refMesh.updateWorldMatrix(true, false)
+      const refBox = new THREE.Box3().setFromObject(refMesh)
+      const refCenter = refBox.getCenter(new THREE.Vector3())
+      const refSize = refBox.getSize(new THREE.Vector3())
+
+      // refCenter is the helipad center on the roof. The building extends below it.
+      // Inflate the horizontal footprint so the hitbox covers the whole building.
+      const footprint = Math.max(refSize.x, refSize.z) * 2.8
+      const heightFromGround = Math.max(refCenter.y, 1)
+      hCenter.set(refCenter.x, heightFromGround / 2, refCenter.z)
+      hTop.set(refCenter.x, heightFromGround, refCenter.z)
+      hMin.set(refCenter.x - footprint / 2, 0, refCenter.z - footprint / 2)
+      hSize.set(footprint, heightFromGround, footprint)
+    } else if (hospitalNode) {
+      // Fallback: tight bbox around the hospital node's near children.
       hospitalNode.updateWorldMatrix(true, false)
       const hPos = new THREE.Vector3().setFromMatrixPosition(hospitalNode.matrixWorld)
-
-      // Size: prefer the tight reference mesh (Cube.055_Colore_0) when present,
-      // otherwise filter out outliers > NEAR_RADIUS away from the transform position.
-      const NEAR_RADIUS = 6 // world units, post-wrapper
-      let bboxSource
-      if (refMesh) {
-        refMesh.updateWorldMatrix(true, false)
-        bboxSource = new THREE.Box3().setFromObject(refMesh)
-        // Inflate horizontally so the hitbox covers more than just the reference mesh
-        const s = bboxSource.getSize(new THREE.Vector3())
-        bboxSource.expandByVector(new THREE.Vector3(s.x * 0.6, 0, s.z * 0.6))
-      } else {
-        const nearMeshes = hospitalMeshes.filter((m) => {
-          m.updateWorldMatrix(true, false)
-          const mp = new THREE.Vector3().setFromMatrixPosition(m.matrixWorld)
-          return Math.hypot(mp.x - hPos.x, mp.z - hPos.z) < NEAR_RADIUS
-        })
-        const meshes = nearMeshes.length > 0 ? nearMeshes : hospitalMeshes
-        bboxSource = new THREE.Box3()
-        meshes.forEach((m) => bboxSource.expandByObject(m))
-      }
-
-      bboxSource.getSize(hSize)
-      hMin.copy(bboxSource.min)
-      hCenter.set(hPos.x, (bboxSource.min.y + bboxSource.max.y) / 2, hPos.z)
-      hTop.set(hPos.x, bboxSource.max.y, hPos.z)
+      const NEAR_RADIUS = 6
+      const nearMeshes = hospitalMeshes.filter((m) => {
+        m.updateWorldMatrix(true, false)
+        const mp = new THREE.Vector3().setFromMatrixPosition(m.matrixWorld)
+        return Math.hypot(mp.x - hPos.x, mp.z - hPos.z) < NEAR_RADIUS
+      })
+      const meshes = nearMeshes.length > 0 ? nearMeshes : hospitalMeshes
+      const fbBox = new THREE.Box3()
+      meshes.forEach((m) => fbBox.expandByObject(m))
+      fbBox.getSize(hSize)
+      hMin.copy(fbBox.min)
+      hCenter.set(hPos.x, (fbBox.min.y + fbBox.max.y) / 2, hPos.z)
+      hTop.set(hPos.x, fbBox.max.y, hPos.z)
     }
 
     // 5. Clone hospital materials so hover-emissive only paints the hospital.
