@@ -88,6 +88,68 @@ export function elevatorPosition(floorId) {
   }
 }
 
+// Staff break rooms ("restrooms") — one for doctors, one for nurses. Both sit
+// at the west end of the building (opposite the elevator). Doctors lounge on
+// the Cardiology/Oncology floor, nurses lounge on the ICU/Pediatrics floor.
+export const LOUNGE_X = -8.3
+export const LOUNGE_HALF_W = 0.65
+export const LOUNGE_HALF_D = 1.2
+
+export const LOUNGES = {
+  doctor: {
+    id: 'doctor-lounge',
+    floorId: 'F2',
+    name: "Doctors' Lounge",
+    accent: '#0ea5e9',
+    z: -3,
+    corridorDir: 1, // corridor is at +z
+  },
+  nurse: {
+    id: 'nurse-lounge',
+    floorId: 'F3',
+    name: "Nurses' Lounge",
+    accent: '#fb7185',
+    z: 3,
+    corridorDir: -1, // corridor is at -z
+  },
+}
+
+export function loungeFor(staffMember) {
+  return staffMember.role === 'Nurse' ? LOUNGES.nurse : LOUNGES.doctor
+}
+
+const DOCTOR_LIST = staff.filter((s) => s.role !== 'Nurse')
+const NURSE_LIST = staff.filter((s) => s.role === 'Nurse')
+
+function loungeSlotFor(staffMember) {
+  const list = staffMember.role === 'Nurse' ? NURSE_LIST : DOCTOR_LIST
+  return list.findIndex((s) => s.id === staffMember.id)
+}
+
+// Where a staff member stands inside their role's lounge. We fan agents out
+// in a small grid so they don't pile up.
+export function loungeStandPosition(staffMember) {
+  const lounge = loungeFor(staffMember)
+  const slot = Math.max(0, loungeSlotFor(staffMember))
+  const floor = hospital.floors.find((f) => f.id === lounge.floorId)
+  if (!floor) return null
+
+  const cols = 3
+  const col = slot % cols
+  const row = Math.floor(slot / cols)
+  const dx = (col - 1) * 0.32
+  const dz = lounge.corridorDir * (0.35 - row * 0.4) // back row is closer to the wall
+
+  return {
+    pos: new THREE.Vector3(
+      LOUNGE_X + dx,
+      floor.level * FLOOR_HEIGHT + FLOOR_THICKNESS / 2,
+      lounge.z + dz,
+    ),
+    floorId: lounge.floorId,
+  }
+}
+
 // Per-staff visit plan: every patient they care for, plus their assigned slot
 // at that patient (the index of the staff inside patient.careTeam).
 export const STAFF_ROUTES = staff

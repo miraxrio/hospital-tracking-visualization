@@ -1039,6 +1039,18 @@ button {
   text-transform: uppercase;
 }
 
+.lounge-label {
+  border: 1px solid;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-transform: uppercase;
+}
+
 /* HTML labels in 3D */
 .bed-label {
   background: rgba(10, 15, 30, 0.92);

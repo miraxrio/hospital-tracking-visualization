@@ -8,6 +8,7 @@ import Floor, { FLOOR_HEIGHT } from './Floor.jsx'
 import Ground from './Ground.jsx'
 import StaffSimulation from './StaffSimulation.jsx'
 import Elevators from './Elevators.jsx'
+import Lounges from './Lounges.jsx'
 
 function CameraRig() {
   const selectedFloorId = useStore((s) => s.selectedFloorId)
@@ -148,6 +149,7 @@ export default function Scene() {
         ))}
 
       <Elevators />
+      <Lounges />
       <StaffSimulation />
 
       <ContactShadows

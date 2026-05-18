@@ -5,22 +5,24 @@ import { useStore } from '../store.js'
 import {
   STAFF_ROUTES,
   staffStandPosition,
+  loungeStandPosition,
   elevatorPosition,
   isOnDuty,
   SIM_MINUTES_PER_SECOND,
 } from '../sim.js'
 import StaffMesh from './StaffMesh.jsx'
 
-const STAY_SIM_MINUTES = 8
-const WALK_SIM_MINUTES = 3
-const ELEVATOR_SIM_MINUTES = 1.5
+const STAY_PATIENT_MIN = 10
+const STAY_LOUNGE_MIN = 18
+const WALK_SIM_MINUTES = 2.5
+const ELEVATOR_SIM_MINUTES = 1.2
+// Each agent picks a number of patient visits in this range before taking a
+// break, varied per agent so they don't all walk to the lounge simultaneously.
+const BREAK_AFTER_MIN = 2
+const BREAK_AFTER_MAX = 4
 
 const _delta = new THREE.Vector3()
 
-// Build the list of segments an agent walks between two stand positions.
-// Same floor -> single walk. Different floor -> walk to elevator, ride, walk
-// from elevator. Each segment carries the floor it lives on (or null for the
-// transit ride) so cutaway visibility can hide agents on inactive floors.
 function planSegments(fromPos, fromFloorId, toPos, toFloorId) {
   if (fromFloorId === toFloorId) {
     return [
@@ -36,27 +38,9 @@ function planSegments(fromPos, fromFloorId, toPos, toFloorId) {
   const fromEl = elevatorPosition(fromFloorId).pos
   const toEl = elevatorPosition(toFloorId).pos
   return [
-    {
-      from: fromPos.clone(),
-      to: fromEl.clone(),
-      kind: 'walk',
-      floorId: fromFloorId,
-      duration: WALK_SIM_MINUTES,
-    },
-    {
-      from: fromEl.clone(),
-      to: toEl.clone(),
-      kind: 'elevate',
-      floorId: null, // mid-ride; hidden in cutaway mode
-      duration: ELEVATOR_SIM_MINUTES,
-    },
-    {
-      from: toEl.clone(),
-      to: toPos.clone(),
-      kind: 'walk',
-      floorId: toFloorId,
-      duration: WALK_SIM_MINUTES,
-    },
+    { from: fromPos.clone(), to: fromEl.clone(), kind: 'walk', floorId: fromFloorId, duration: WALK_SIM_MINUTES },
+    { from: fromEl.clone(), to: toEl.clone(), kind: 'elevate', floorId: null, duration: ELEVATOR_SIM_MINUTES },
+    { from: toEl.clone(), to: toPos.clone(), kind: 'walk', floorId: toFloorId, duration: WALK_SIM_MINUTES },
   ]
 }
 
@@ -65,6 +49,16 @@ function setFacing(agent, from, to) {
   if (_delta.lengthSq() > 1e-4) {
     agent.facing = Math.atan2(_delta.x, _delta.z)
   }
+}
+
+function startMove(agent, dest, destType, currentTime) {
+  agent.segments = planSegments(agent.worldPos, agent.floorId, dest.pos, dest.floorId)
+  agent.segmentIdx = 0
+  agent.state = 'moving'
+  agent.stateStart = currentTime
+  agent.nextType = destType
+  agent.nextFloorId = dest.floorId
+  setFacing(agent, agent.segments[0].from, agent.segments[0].to)
 }
 
 export default function StaffSimulation() {
@@ -109,10 +103,7 @@ export default function StaffSimulation() {
 
       let agent = agentsRef.current.get(route.staff.id)
       if (!agent) {
-        const first = staffStandPosition(
-          route.visits[0].patientId,
-          route.visits[0].slot,
-        )
+        const first = staffStandPosition(route.visits[0].patientId, route.visits[0].slot)
         if (!first) continue
         agent = {
           routeIdx: 0,
@@ -121,8 +112,15 @@ export default function StaffSimulation() {
           worldPos: first.pos.clone(),
           facing: 0,
           floorId: first.floorId,
+          currentType: 'patient',
+          nextType: 'patient',
+          nextFloorId: first.floorId,
           segments: null,
           segmentIdx: 0,
+          visitCount: 0,
+          breakAfter:
+            BREAK_AFTER_MIN +
+            Math.floor(Math.random() * (BREAK_AFTER_MAX - BREAK_AFTER_MIN + 1)),
         }
         agentsRef.current.set(route.staff.id, agent)
       }
@@ -131,24 +129,39 @@ export default function StaffSimulation() {
         let elapsed = currentTime - agent.stateStart
         if (elapsed < 0) elapsed += 1440
 
-        if (agent.state === 'staying' && elapsed >= STAY_SIM_MINUTES) {
-          // Plan move to the next patient in the visit list
-          const nextIdx = (agent.routeIdx + 1) % route.visits.length
-          const nextVisit = route.visits[nextIdx]
-          const dest = staffStandPosition(nextVisit.patientId, nextVisit.slot)
-          if (dest) {
-            agent.routeIdx = nextIdx
-            agent.segments = planSegments(
-              agent.worldPos,
-              agent.floorId,
-              dest.pos,
-              dest.floorId,
-            )
-            agent.segmentIdx = 0
-            agent.state = 'moving'
-            agent.stateStart = currentTime
-            const seg = agent.segments[0]
-            setFacing(agent, seg.from, seg.to)
+        if (agent.state === 'staying') {
+          const stayDuration =
+            agent.currentType === 'lounge' ? STAY_LOUNGE_MIN : STAY_PATIENT_MIN
+
+          if (elapsed >= stayDuration) {
+            let dest
+            let destType
+
+            if (agent.currentType === 'lounge') {
+              // Break is over — go back to the next patient in the rotation.
+              agent.routeIdx = (agent.routeIdx + 1) % route.visits.length
+              const v = route.visits[agent.routeIdx]
+              dest = staffStandPosition(v.patientId, v.slot)
+              destType = 'patient'
+              agent.visitCount = 0
+              agent.breakAfter =
+                BREAK_AFTER_MIN +
+                Math.floor(Math.random() * (BREAK_AFTER_MAX - BREAK_AFTER_MIN + 1))
+            } else {
+              // Patient visit completed — break or move to the next patient.
+              agent.visitCount += 1
+              if (agent.visitCount >= agent.breakAfter) {
+                dest = loungeStandPosition(route.staff)
+                destType = 'lounge'
+              } else {
+                agent.routeIdx = (agent.routeIdx + 1) % route.visits.length
+                const v = route.visits[agent.routeIdx]
+                dest = staffStandPosition(v.patientId, v.slot)
+                destType = 'patient'
+              }
+            }
+
+            if (dest) startMove(agent, dest, destType, currentTime)
           }
         } else if (agent.state === 'moving' && agent.segments) {
           const seg = agent.segments[agent.segmentIdx]
@@ -158,9 +171,8 @@ export default function StaffSimulation() {
             if (agent.segmentIdx >= agent.segments.length) {
               agent.state = 'staying'
               agent.stateStart = currentTime
-              // Final waypoint determines the floor we're now on
-              const last = agent.segments[agent.segments.length - 1]
-              agent.floorId = last.floorId ?? agent.floorId
+              agent.currentType = agent.nextType
+              agent.floorId = agent.nextFloorId
               agent.segments = null
             } else {
               agent.stateStart = currentTime
@@ -174,8 +186,8 @@ export default function StaffSimulation() {
         }
       }
 
-      // Visibility under cutaway: only show on the active floor; hide while
-      // mid-ride between floors.
+      // Cutaway visibility: hide while mid-elevator-ride, hide while standing or
+      // walking on a non-selected floor.
       let visibleFloorId = agent.floorId
       if (agent.state === 'moving' && agent.segments) {
         const seg = agent.segments[agent.segmentIdx]

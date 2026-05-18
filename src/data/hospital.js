@@ -17,12 +17,23 @@ export const staff = [
   { id: 'd5', role: 'Attending', name: 'Dr. Amelia Brooks', specialty: 'Pediatrics', shift: '08:00-20:00', pager: '#4475' },
   { id: 'd6', role: 'Attending', name: 'Dr. Samir Khoury', specialty: 'Orthopedics', shift: '07:00-17:00', pager: '#4476' },
   { id: 'd7', role: 'Surgeon', name: 'Dr. Naledi Okafor', specialty: 'Cardiothoracic', shift: '06:00-16:00', pager: '#4477' },
+  { id: 'd8', role: 'Attending', name: 'Dr. Riley Foster', specialty: 'Hospitalist', shift: '07:00-19:00', pager: '#4478' },
+  { id: 'd9', role: 'Attending', name: 'Dr. Sofia Castro', specialty: 'Pulmonology', shift: '08:00-18:00', pager: '#4479' },
+  { id: 'd10', role: 'Resident', name: 'Dr. Mateo Cruz', specialty: 'Internal Medicine', shift: '19:00-07:00', pager: '#4480' },
+  { id: 'd11', role: 'Surgeon', name: 'Dr. Yuki Nakamura', specialty: 'Trauma', shift: '06:00-16:00', pager: '#4481' },
+  { id: 'd12', role: 'Attending', name: 'Dr. Asha Patel', specialty: 'Neurology', shift: '09:00-19:00', pager: '#4482' },
   { id: 'n1', role: 'Nurse', name: 'RN Olivia Hart', specialty: 'ICU', shift: '07:00-19:00', pager: '#5510' },
   { id: 'n2', role: 'Nurse', name: 'RN Liam Park', specialty: 'Cardiology', shift: '19:00-07:00', pager: '#5511' },
   { id: 'n3', role: 'Nurse', name: 'RN Sofia Romano', specialty: 'Pediatrics', shift: '07:00-19:00', pager: '#5512' },
   { id: 'n4', role: 'Nurse', name: 'RN Jamal Carter', specialty: 'Emergency', shift: '19:00-07:00', pager: '#5513' },
   { id: 'n5', role: 'Nurse', name: 'RN Mei Chen', specialty: 'Oncology', shift: '07:00-19:00', pager: '#5514' },
   { id: 'n6', role: 'Nurse', name: 'RN Daniel Costa', specialty: 'Orthopedics', shift: '07:00-19:00', pager: '#5515' },
+  { id: 'n7', role: 'Nurse', name: 'RN Owen Walker', specialty: 'General', shift: '07:00-19:00', pager: '#5516' },
+  { id: 'n8', role: 'Nurse', name: 'RN Petra Klein', specialty: 'ICU', shift: '19:00-07:00', pager: '#5517' },
+  { id: 'n9', role: 'Nurse', name: 'RN Marcus Bell', specialty: 'Cardiology', shift: '19:00-07:00', pager: '#5518' },
+  { id: 'n10', role: 'Nurse', name: 'RN Beatrice Cole', specialty: 'Pediatrics', shift: '19:00-07:00', pager: '#5519' },
+  { id: 'n11', role: 'Nurse', name: 'RN Esme Larsen', specialty: 'Orthopedics', shift: '19:00-07:00', pager: '#5520' },
+  { id: 'n12', role: 'Nurse', name: 'RN Diego Ferreira', specialty: 'ICU', shift: '07:00-19:00', pager: '#5521' },
 ]
 
 const lookup = (id) => staff.find((s) => s.id === id)
@@ -46,7 +57,7 @@ export const patients = {
     allergies: ['Penicillin', 'Shellfish'],
     bloodType: 'A+',
     vitals: { hr: 78, bp: '128/82', spo2: 96, temp: 36.8, resp: 16 },
-    careTeam: ['d1', 'd7', 'n2'],
+    careTeam: ['d1', 'd7', 'd8', 'n2', 'n9'],
     schedule: [
       { time: '08:00', task: 'Cardio rounds', who: 'Dr. Vargas' },
       { time: '10:30', task: 'Echocardiogram', who: 'Imaging Lab 2' },
@@ -91,7 +102,7 @@ export const patients = {
     allergies: ['None known'],
     bloodType: 'O-',
     vitals: { hr: 84, bp: '118/74', spo2: 98, temp: 37.2, resp: 14 },
-    careTeam: ['d2', 'n4'],
+    careTeam: ['d2', 'n4', 'n7'],
     schedule: [
       { time: '09:00', task: 'Surgical follow-up', who: 'Dr. Lee' },
       { time: '11:00', task: 'Wound check', who: 'RN Carter' },
@@ -130,7 +141,7 @@ export const patients = {
     allergies: ['Dust mites', 'Cat dander'],
     bloodType: 'B+',
     vitals: { hr: 102, bp: '102/68', spo2: 94, temp: 37.0, resp: 22 },
-    careTeam: ['d5', 'n3'],
+    careTeam: ['d5', 'd9', 'n3', 'n10'],
     schedule: [
       { time: '08:30', task: 'Peds rounds', who: 'Dr. Brooks' },
       { time: '10:00', task: 'Nebulizer treatment', who: 'RT Davies' },
@@ -171,7 +182,7 @@ export const patients = {
     allergies: ['Sulfa drugs'],
     bloodType: 'AB+',
     vitals: { hr: 118, bp: '92/58', spo2: 91, temp: 38.6, resp: 24 },
-    careTeam: ['d1', 'd3', 'n1'],
+    careTeam: ['d1', 'd3', 'd10', 'd12', 'n1', 'n8', 'n12'],
     schedule: [
       { time: '07:00', task: 'ICU rounds', who: 'Dr. Vargas' },
       { time: '09:00', task: 'Arterial line check', who: 'RN Hart' },
@@ -216,7 +227,7 @@ export const patients = {
     allergies: ['Latex'],
     bloodType: 'A-',
     vitals: { hr: 72, bp: '124/78', spo2: 97, temp: 36.5, resp: 14 },
-    careTeam: ['d4', 'n5'],
+    careTeam: ['d4', 'd8', 'n5'],
     schedule: [
       { time: '09:30', task: 'Onc rounds', who: 'Dr. Tanaka' },
       { time: '11:00', task: 'FOLFOX infusion', who: 'Infusion suite' },
@@ -260,7 +271,7 @@ export const patients = {
     allergies: ['Codeine (nausea)'],
     bloodType: 'O+',
     vitals: { hr: 68, bp: '116/72', spo2: 99, temp: 36.7, resp: 14 },
-    careTeam: ['d6', 'n6'],
+    careTeam: ['d6', 'd11', 'n6', 'n11'],
     schedule: [
       { time: '08:00', task: 'Ortho rounds', who: 'Dr. Khoury' },
       { time: '10:00', task: 'PT weight-bear trial', who: 'PT Wilson' },
