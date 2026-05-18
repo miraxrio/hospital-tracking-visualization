@@ -27,7 +27,10 @@ const MODELS = {
     walkUrl: `${BASE}models/nurse walk.glb`,
     idleClipIdx: 0,
     walkClipIdx: 1,
-    scale: 70,
+    // Nurse bone translations are 10x the doctor's (leg = 4.24 vs 0.44).
+    // With the armature's baked-in 0.01 scale that nets to 0.1x doctor's
+    // effective size, so we need 10x doctor's prop scale to match.
+    scale: 7,
   },
 }
 
