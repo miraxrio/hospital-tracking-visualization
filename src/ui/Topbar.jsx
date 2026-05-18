@@ -1,17 +1,29 @@
 import React from 'react'
 import { hospital, hospitalStats, severityColor } from '../data/hospital.js'
+import { useStore } from '../store.js'
 
 export default function Topbar() {
   const stats = hospitalStats()
   const occRate = Math.round((stats.occupied / stats.beds) * 100)
+  const returnToCity = useStore((s) => s.returnToCity)
 
   return (
     <div className="topbar">
-      <div className="brand">
-        <div className="brand-mark">M</div>
-        <div>
-          <div className="brand-title">MediTwin</div>
-          <div className="brand-sub">{hospital.name}</div>
+      <div className="brand-row">
+        <button
+          className="back-btn"
+          onClick={returnToCity}
+          title="Return to city view"
+        >
+          <span className="back-btn-arrow">←</span>
+          <span className="back-btn-label">City</span>
+        </button>
+        <div className="brand">
+          <div className="brand-mark">M</div>
+          <div>
+            <div className="brand-title">MediTwin</div>
+            <div className="brand-sub">{hospital.name}</div>
+          </div>
         </div>
       </div>
 

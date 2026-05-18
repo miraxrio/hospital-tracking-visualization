@@ -72,6 +72,43 @@ button {
   pointer-events: auto;
 }
 
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  background: var(--panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  color: var(--text-0);
+  padding: 9px 14px 9px 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.back-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateX(-2px);
+}
+
+.back-btn-arrow {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.back-btn-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -689,6 +726,108 @@ button {
   background: rgba(99, 102, 241, 0.18);
   color: #c7d2fe;
   margin-right: 6px;
+}
+
+/* ---------- City scene ---------- */
+
+.city-hint {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 22px;
+  z-index: 5;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+}
+
+.city-hint-title {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+
+.city-hint-body {
+  font-size: 12px;
+  color: var(--text-1);
+}
+
+.hospital-marker {
+  background: rgba(10, 15, 30, 0.92);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.45);
+}
+
+.hospital-marker .small {
+  font-weight: 400;
+  font-size: 10px;
+  color: #fca5a5;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Loading screen */
+.loading-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: 18px;
+  background: radial-gradient(ellipse at center, #0e1426 0%, #050810 100%);
+  z-index: 50;
+  pointer-events: none;
+  align-content: center;
+}
+
+.loading-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid rgba(148, 163, 184, 0.2);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 13px;
+  color: var(--text-1);
+  letter-spacing: 0.6px;
+}
+
+/* Cross-fade overlay between scenes */
+.fade-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+  transition: opacity 0.32s ease;
+}
+
+.fade-overlay.on {
+  opacity: 1;
+  pointer-events: all;
 }
 
 /* Hint */
