@@ -1,9 +1,11 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Environment } from '@react-three/drei'
 import * as THREE from 'three'
 import CityModel from './CityModel.jsx'
 import SimSky from './SimSky.jsx'
+import Mountains from './Mountains.jsx'
+import AuditCrowdSign from './AuditCrowdSign.jsx'
 
 const HOME_POS = new THREE.Vector3(45, 35, 45)
 
@@ -65,7 +67,8 @@ export default function CityScene() {
         <CityModel onModelReady={({ bbox }) => setCityBbox(bbox)} />
       </Suspense>
 
-      <ContactShadows position={[0, 0.01, 0]} opacity={0.4} scale={120} blur={3} far={20} />
+      <Mountains />
+      <AuditCrowdSign />
 
       <CityCamera cityBbox={cityBbox} />
     </Canvas>
