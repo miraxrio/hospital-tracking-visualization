@@ -40,8 +40,9 @@ function CityCamera({ cityBbox, flyTo, onArrived }) {
     fromPos.current.copy(camera.position)
     fromTarget.current.copy(controls.current.target)
 
-    // Camera ends roughly 4 units above and 6 units back from the hospital roof
-    const offset = new THREE.Vector3(6, 4, 6)
+    // End up just outside the hospital. Distance scales with hospital width.
+    const mag = Math.max(flyTo.size.x, flyTo.size.z) * 1.6 + 4
+    const offset = new THREE.Vector3(mag, mag * 0.7, mag)
     toPos.current.copy(flyTo.top).add(offset)
     toTarget.current.copy(flyTo.center)
 

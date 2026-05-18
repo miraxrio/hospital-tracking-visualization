@@ -771,6 +771,13 @@ button {
   pointer-events: none;
   text-align: center;
   box-shadow: 0 8px 24px rgba(239, 68, 68, 0.45);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.hospital-marker.is-hovered {
+  transform: translate(-50%, -50%) scale(1.12);
+  border-color: rgba(56, 189, 248, 0.9);
+  box-shadow: 0 12px 32px rgba(56, 189, 248, 0.6), 0 0 0 2px rgba(56, 189, 248, 0.35);
 }
 
 .hospital-marker .small {

@@ -3,49 +3,78 @@ import { useGLTF, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 
-const MODEL_URL = `${import.meta.env.BASE_URL}models/low_poly_city/scene.gltf`
+const MODEL_URL = `${import.meta.env.BASE_URL}models/low_poly_city.glb`
 
-// The node names inside scene.gltf that compose the hospital.
-const HOSPITAL_NAMES = new Set([
+// Names inside the GLB that compose the hospital block.
+const HOSPITAL_ROOT_NAMES = new Set([
   '(base) hospital',
-  '(base) hospital_Colore_0',
 ])
+
+// Normalize the (very large, Sketchfab-exported) city to roughly this size
+// along its widest horizontal axis. Anything else in the scene works in these units.
+const TARGET_CITY_SIZE = 90
 
 useGLTF.preload(MODEL_URL)
 
-export default function CityModel({ onHospitalClick, onHospitalHover, onModelReady }) {
+export default function CityModel({ onHospitalClick, onModelReady }) {
   const { scene } = useGLTF(MODEL_URL)
-  const groupRef = useRef()
-  const [bbox, setBbox] = useState(null)
-  const [hospitalCenter, setHospitalCenter] = useState(null)
-  const originalEmissive = useRef(new Map())
+  const wrapperRef = useRef()
+  const [hospitalInfo, setHospitalInfo] = useState(null)
   const [hovered, setHovered] = useState(false)
+  const originalEmissive = useRef(new Map())
 
-  // Walk the scene once: find hospital meshes and the overall bounding box.
+  // One-time setup: detect hospital meshes, normalize scene to target size, compute marker pose.
   useEffect(() => {
-    if (!scene) return
+    if (!scene || !wrapperRef.current) return
 
+    // 1. Mark hospital meshes via parent-name walk.
     const hospitalMeshes = []
     scene.traverse((obj) => {
-      if (!obj.isMesh) return
-      // Walk up the parent chain checking names so we catch children of "(base) hospital".
-      let parent = obj
-      while (parent) {
-        if (HOSPITAL_NAMES.has(parent.name)) {
-          hospitalMeshes.push(obj)
+      if (obj.isMesh) {
+        obj.castShadow = true
+        obj.receiveShadow = true
+      }
+      let p = obj
+      while (p) {
+        if (HOSPITAL_ROOT_NAMES.has(p.name)) {
+          if (obj.isMesh) {
+            hospitalMeshes.push(obj)
+            obj.userData.isHospital = true
+          }
           break
         }
-        parent = parent.parent
+        p = p.parent
       }
-      obj.castShadow = true
-      obj.receiveShadow = true
     })
 
-    // Cache hospital meshes for hover toggling
+    // 2. Compute scene-local bbox BEFORE applying wrapper transforms.
+    scene.updateMatrixWorld(true)
+    const rawBbox = new THREE.Box3().setFromObject(scene)
+    const rawSize = rawBbox.getSize(new THREE.Vector3())
+    const rawCenter = rawBbox.getCenter(new THREE.Vector3())
+    const maxDim = Math.max(rawSize.x, rawSize.z) || 1
+    const scale = TARGET_CITY_SIZE / maxDim
+
+    // 3. Apply wrapper transform: scale down + ground-align + center on XZ.
+    wrapperRef.current.scale.setScalar(scale)
+    wrapperRef.current.position.set(
+      -rawCenter.x * scale,
+      -rawBbox.min.y * scale,
+      -rawCenter.z * scale,
+    )
+    wrapperRef.current.updateMatrixWorld(true)
+
+    // 4. Compute hospital bbox in world space (post-wrapper transform).
+    const hBox = new THREE.Box3()
+    hospitalMeshes.forEach((m) => hBox.expandByObject(m))
+    const hCenter = hBox.getCenter(new THREE.Vector3())
+    const hSize = hBox.getSize(new THREE.Vector3())
+    const hTop = new THREE.Vector3(hCenter.x, hBox.max.y, hCenter.z)
+
+    // 5. Clone hospital materials so hover-emissive only paints the hospital
+    //    (other buildings may share materials with hospital submeshes).
     hospitalMeshes.forEach((m) => {
-      m.userData.isHospital = true
-      if (m.material) {
-        // Materials may be shared across instances — clone to keep hover local
+      if (m.material && !Array.isArray(m.material)) {
         m.material = m.material.clone()
         originalEmissive.current.set(m.uuid, {
           color: m.material.emissive ? m.material.emissive.clone() : new THREE.Color(0, 0, 0),
@@ -54,131 +83,151 @@ export default function CityModel({ onHospitalClick, onHospitalHover, onModelRea
       }
     })
 
-    // Compute centers
-    const box = new THREE.Box3().setFromObject(scene)
-    setBbox(box)
+    setHospitalInfo({
+      meshes: hospitalMeshes,
+      center: hCenter,
+      top: hTop,
+      size: hSize,
+    })
 
-    if (hospitalMeshes.length) {
-      const hBox = new THREE.Box3()
-      hospitalMeshes.forEach((m) => hBox.expandByObject(m))
-      const center = new THREE.Vector3()
-      hBox.getCenter(center)
-      const top = new THREE.Vector3(center.x, hBox.max.y, center.z)
-      setHospitalCenter({ center, top, size: hBox.getSize(new THREE.Vector3()) })
-    }
-
-    if (onModelReady) onModelReady({ bbox: box })
+    // 6. Final scene bbox for camera auto-fit.
+    const finalBbox = new THREE.Box3().setFromObject(wrapperRef.current)
+    onModelReady?.({ bbox: finalBbox })
   }, [scene, onModelReady])
 
-  // Hover effect — boost emissive on the hospital meshes
+  // Hover effect — boost emissive on hospital meshes.
   useEffect(() => {
-    if (!scene) return
-    scene.traverse((obj) => {
-      if (!obj.isMesh || !obj.userData.isHospital) return
-      const orig = originalEmissive.current.get(obj.uuid)
-      if (!orig || !obj.material) return
+    if (!hospitalInfo) return
+    hospitalInfo.meshes.forEach((m) => {
+      const orig = originalEmissive.current.get(m.uuid)
+      if (!orig || !m.material) return
       if (hovered) {
-        obj.material.emissive = new THREE.Color('#38bdf8')
-        obj.material.emissiveIntensity = 0.55
+        m.material.emissive = new THREE.Color('#38bdf8')
+        m.material.emissiveIntensity = 0.85
       } else {
-        obj.material.emissive = orig.color.clone()
-        obj.material.emissiveIntensity = orig.intensity
+        m.material.emissive = orig.color.clone()
+        m.material.emissiveIntensity = orig.intensity
       }
     })
-  }, [hovered, scene])
+  }, [hovered, hospitalInfo])
 
-  const handlePointerOver = (e) => {
-    if (!e.object?.userData?.isHospital) return
-    e.stopPropagation()
-    setHovered(true)
-    onHospitalHover?.(true)
-    document.body.style.cursor = 'pointer'
-  }
-  const handlePointerOut = (e) => {
-    if (!e.object?.userData?.isHospital) return
-    e.stopPropagation()
-    setHovered(false)
-    onHospitalHover?.(false)
-    document.body.style.cursor = 'default'
-  }
-  const handleClick = (e) => {
-    if (!e.object?.userData?.isHospital) return
-    e.stopPropagation()
-    onHospitalClick?.(hospitalCenter)
-  }
-
-  // Beacon animation
-  const beaconRef = useRef()
+  // Beacon pulse
+  const haloRef = useRef()
+  const beamRef = useRef()
   useFrame((state) => {
-    if (!beaconRef.current) return
     const t = state.clock.elapsedTime
-    beaconRef.current.scale.setScalar(1 + Math.sin(t * 2) * 0.18)
+    if (haloRef.current) {
+      const s = 1 + Math.sin(t * 2) * 0.18
+      haloRef.current.scale.setScalar(s)
+    }
+    if (beamRef.current) {
+      beamRef.current.material.opacity = 0.18 + Math.sin(t * 2) * 0.08
+    }
   })
 
-  return (
-    <group ref={groupRef}>
-      <primitive
-        object={scene}
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
-        onClick={handleClick}
-      />
+  // Marker dimensions are proportional to the hospital size so it always reads.
+  const marker = useMemo(() => {
+    if (!hospitalInfo) return null
+    const m = Math.max(hospitalInfo.size.x, hospitalInfo.size.z)
+    return {
+      cross: m * 0.45,
+      thickness: m * 0.12,
+      halo: m * 0.6,
+      beamRadius: m * 0.18,
+      beamHeight: m * 1.4,
+      labelOffset: m * 0.6,
+      hitboxScale: [
+        hospitalInfo.size.x * 1.05,
+        hospitalInfo.size.y * 1.1,
+        hospitalInfo.size.z * 1.05,
+      ],
+    }
+  }, [hospitalInfo])
 
-      {/* Hospital marker — glowing red cross floating above the building */}
-      {hospitalCenter && (
-        <group
-          position={[hospitalCenter.top.x, hospitalCenter.top.y + 3, hospitalCenter.top.z]}
-          onPointerOver={() => {
-            setHovered(true)
-            document.body.style.cursor = 'pointer'
-          }}
-          onPointerOut={() => {
-            setHovered(false)
-            document.body.style.cursor = 'default'
-          }}
-          onClick={(e) => {
-            e.stopPropagation()
-            onHospitalClick?.(hospitalCenter)
-          }}
-        >
-          {/* Halo */}
-          <mesh ref={beaconRef}>
-            <sphereGeometry args={[1.2, 24, 24]} />
-            <meshBasicMaterial color="#ef4444" transparent opacity={0.18} />
+  const enter = () => {
+    setHovered(true)
+    document.body.style.cursor = 'pointer'
+  }
+  const leave = () => {
+    setHovered(false)
+    document.body.style.cursor = 'default'
+  }
+  const fire = (e) => {
+    e?.stopPropagation?.()
+    if (hospitalInfo) onHospitalClick?.(hospitalInfo)
+  }
+
+  return (
+    <>
+      <group ref={wrapperRef}>
+        <primitive object={scene} />
+      </group>
+
+      {hospitalInfo && marker && (
+        <>
+          {/* Invisible hitbox over the hospital — captures clicks/hover even if the
+              underlying meshes are tiny or oddly shaped */}
+          <mesh
+            position={hospitalInfo.center.toArray()}
+            scale={marker.hitboxScale}
+            onPointerOver={(e) => { e.stopPropagation(); enter() }}
+            onPointerOut={(e) => { e.stopPropagation(); leave() }}
+            onClick={fire}
+          >
+            <boxGeometry />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
-          {/* Red cross */}
-          <group>
+
+          {/* Light beam from the hospital roof up into the sky */}
+          <mesh
+            ref={beamRef}
+            position={[hospitalInfo.top.x, hospitalInfo.top.y + marker.beamHeight / 2, hospitalInfo.top.z]}
+          >
+            <cylinderGeometry args={[marker.beamRadius * 0.4, marker.beamRadius, marker.beamHeight, 24, 1, true]} />
+            <meshBasicMaterial color="#ef4444" transparent opacity={0.22} side={THREE.DoubleSide} depthWrite={false} />
+          </mesh>
+
+          {/* Floating beacon: halo + red cross */}
+          <group
+            position={[hospitalInfo.top.x, hospitalInfo.top.y + marker.beamHeight + marker.cross * 0.5, hospitalInfo.top.z]}
+            onPointerOver={enter}
+            onPointerOut={leave}
+            onClick={fire}
+          >
+            <mesh ref={haloRef}>
+              <sphereGeometry args={[marker.halo, 24, 24]} />
+              <meshBasicMaterial color="#ef4444" transparent opacity={0.2} depthWrite={false} />
+            </mesh>
             <mesh>
-              <boxGeometry args={[1.4, 0.4, 0.35]} />
+              <boxGeometry args={[marker.cross, marker.thickness, marker.thickness * 0.7]} />
               <meshStandardMaterial
                 color="#ffffff"
                 emissive="#ef4444"
-                emissiveIntensity={0.5}
+                emissiveIntensity={0.9}
               />
             </mesh>
             <mesh>
-              <boxGeometry args={[0.4, 1.4, 0.35]} />
+              <boxGeometry args={[marker.thickness, marker.cross, marker.thickness * 0.7]} />
               <meshStandardMaterial
                 color="#ffffff"
                 emissive="#ef4444"
-                emissiveIntensity={0.5}
+                emissiveIntensity={0.9}
               />
             </mesh>
+            <Html
+              position={[0, marker.cross * 0.9, 0]}
+              center
+              distanceFactor={45}
+              zIndexRange={[10, 0]}
+            >
+              <div className={`hospital-marker ${hovered ? 'is-hovered' : ''}`}>
+                Northbrook Regional
+                <div className="small">click to enter</div>
+              </div>
+            </Html>
           </group>
-          {/* Beam from cross to ground */}
-          <mesh position={[0, -1.8, 0]}>
-            <cylinderGeometry args={[0.18, 0.4, 3.6, 16, 1, true]} />
-            <meshBasicMaterial color="#ef4444" transparent opacity={0.18} side={2} />
-          </mesh>
-          {/* Label */}
-          <Html position={[0, 1.7, 0]} center distanceFactor={20} zIndexRange={[10, 0]}>
-            <div className="hospital-marker">
-              Northbrook Regional
-              <div className="small">click to enter</div>
-            </div>
-          </Html>
-        </group>
+        </>
       )}
-    </group>
+    </>
   )
 }
