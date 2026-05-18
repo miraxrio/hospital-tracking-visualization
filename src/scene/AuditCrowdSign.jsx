@@ -5,10 +5,14 @@ const FONT_URL = `${import.meta.env.BASE_URL}fonts/helvetiker_bold.typeface.json
 
 function Sign() {
   return (
-    <Center position={[0, 22, -42]} rotation={[0, 0, 0]}>
+    // Tucked behind the city in the -X / -Z quadrant so it reads as a
+    // backdrop on the far side, not as something perched next to the
+    // building. Slight Y rotation so the front face leans toward the
+    // default camera position.
+    <Center position={[-15, 24, -70]} rotation={[0, 0.55, 0]}>
       <Text3D
         font={FONT_URL}
-        size={6}
+        size={5}
         height={1.4}
         curveSegments={6}
         bevelEnabled

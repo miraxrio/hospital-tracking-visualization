@@ -43,11 +43,12 @@ export default function CityModel({ onModelReady }) {
           obj,
           baseX: obj.position.x,
           baseZ: obj.position.z,
-          // Random per-cloud drift parameters
-          freq: 0.04 + Math.random() * 0.04,
+          // Random per-cloud drift parameters — frequencies tuned so a full
+          // cycle takes roughly 10–25 seconds (visible motion on glance).
+          freq: 0.25 + Math.random() * 0.25,
           phase: Math.random() * Math.PI * 2,
-          ampX: 800 + Math.random() * 1200,
-          ampZ: 200 + Math.random() * 400,
+          ampX: 1400 + Math.random() * 1600,
+          ampZ: 400 + Math.random() * 600,
         })
       }
     })

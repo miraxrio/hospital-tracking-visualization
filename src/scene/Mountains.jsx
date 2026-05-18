@@ -1,25 +1,35 @@
 import React, { useMemo } from 'react'
 
-// A short row of stylized cones placed behind the city as a scenic backdrop.
-// The colors are picked to match the daytime sky tones; at sunset/night they
-// pick up the directional-light tint from SimSky.
-const PEAKS = [
-  { pos: [-72, 0, -55], r: 22, h: 28, color: '#9aabc4' },
-  { pos: [-44, 0, -65], r: 24, h: 36, color: '#7f93af' },
-  { pos: [-12, 0, -58], r: 18, h: 24, color: '#a3b3cb' },
-  { pos: [18, 0, -68], r: 26, h: 40, color: '#7589a5' },
-  { pos: [50, 0, -60], r: 22, h: 32, color: '#94a6bf' },
-  { pos: [80, 0, -50], r: 18, h: 24, color: '#a3b3cb' },
+// Rolling earthen hills placed behind the city (negative-Z half of the
+// scene), biased toward the back-left so they read as the "horizon" rather
+// than something sitting next to the city. Hemispheres + flat shading give
+// the cartoon low-poly look that matches the city model.
+const HILLS = [
+  { pos: [-55, 0, -60], r: 22, scaleY: 0.65, color: '#7b573b' },
+  { pos: [-28, 0, -78], r: 28, scaleY: 0.7,  color: '#6b4928' },
+  { pos: [-2,  0, -90], r: 30, scaleY: 0.7,  color: '#8a6a47' },
+  { pos: [22,  0, -82], r: 25, scaleY: 0.65, color: '#6b4928' },
+  { pos: [45,  0, -68], r: 20, scaleY: 0.6,  color: '#7b573b' },
+  { pos: [-40, 0, -50], r: 14, scaleY: 0.55, color: '#9a7a56' },
+  { pos: [10,  0, -55], r: 12, scaleY: 0.5,  color: '#9a7a56' },
 ]
 
 export default function Mountains() {
-  const peaks = useMemo(() => PEAKS, [])
+  const hills = useMemo(() => HILLS, [])
   return (
     <group>
-      {peaks.map((p, i) => (
-        <mesh key={i} position={p.pos} castShadow receiveShadow>
-          <coneGeometry args={[p.r, p.h, 8, 1]} />
-          <meshStandardMaterial color={p.color} roughness={0.92} flatShading />
+      {hills.map((h, i) => (
+        <mesh
+          key={i}
+          position={h.pos}
+          scale={[1, h.scaleY, 1]}
+          castShadow
+          receiveShadow
+        >
+          {/* Hemisphere: a sphere clipped to the upper half so the silhouette
+              is a soft dome instead of a pointy peak. */}
+          <sphereGeometry args={[h.r, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={h.color} roughness={0.95} flatShading />
         </mesh>
       ))}
     </group>
