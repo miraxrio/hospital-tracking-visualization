@@ -16,8 +16,11 @@ import StaffMesh from './StaffMesh.jsx'
 
 const STAY_PATIENT_MIN = 10
 const STAY_LOUNGE_MIN = 18
-const WALK_SIM_MINUTES = 2.5
-const ELEVATOR_SIM_MINUTES = 1.2
+// Bumped so the walk animation actually has time to play out (a Mixamo walk
+// cycle is ~1s; previously walks finished in 0.4 real-time seconds, which
+// was less than the 0.25s crossfade alone).
+const WALK_SIM_MINUTES = 9
+const ELEVATOR_SIM_MINUTES = 3
 // Each agent picks a number of patient visits in this range before taking a
 // break, varied per agent so they don't all walk to the lounge simultaneously.
 const BREAK_AFTER_MIN = 2
@@ -177,7 +180,11 @@ export default function StaffSimulation() {
           }
         } else if (agent.state === 'moving' && agent.segments) {
           const seg = agent.segments[agent.segmentIdx]
-          if (elapsed >= seg.duration) {
+          const segDist = seg.from.distanceTo(seg.to)
+          // 0-length walks (a single-patient agent looping to the same bed)
+          // finish instantly — no point making them idle through a phantom walk.
+          const segDuration = segDist > 0.1 ? seg.duration : 0
+          if (elapsed >= segDuration) {
             agent.worldPos.copy(seg.to)
             agent.segmentIdx += 1
             if (agent.segmentIdx >= agent.segments.length) {
@@ -224,7 +231,11 @@ export default function StaffSimulation() {
       if (agent.state === 'moving' && agent.segments) {
         const seg = agent.segments[agent.segmentIdx]
         visibleFloorId = seg.floorId
-        walkingNow = seg.kind === 'walk'
+        // Only count it as "walking" if there's actual ground to cover —
+        // 0-distance walks (single-patient routes) shouldn't trigger the
+        // walk animation.
+        walkingNow =
+          seg.kind === 'walk' && seg.from.distanceTo(seg.to) > 0.1
       }
       const walkingRef = walkingRefs.current.get(route.staff.id)
       if (walkingRef) walkingRef.current = walkingNow
@@ -235,10 +246,6 @@ export default function StaffSimulation() {
       if (visible) {
         grp.position.copy(agent.worldPos)
         grp.rotation.y = agent.facing
-        if (walkingNow) {
-          const bob = Math.sin(currentTime * 6 + agent.routeIdx) * 0.02
-          grp.position.y = agent.worldPos.y + bob
-        }
       }
     }
   })
