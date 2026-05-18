@@ -66,8 +66,18 @@ function startMove(agent, dest, destType, currentTime) {
 export default function StaffSimulation() {
   const groupRefs = useRef(new Map())
   const agentsRef = useRef(new Map())
+  // Per-agent walking flag exposed to the doctor mesh so it can crossfade
+  // between idle and walk animations.
+  const walkingRefs = useRef(new Map())
   const liveTime = useRef(useStore.getState().timeOfDay)
   const lastSync = useRef(0)
+
+  // Ensure every route has a walking-ref before render so StaffMesh can read it.
+  for (const route of STAFF_ROUTES) {
+    if (!walkingRefs.current.has(route.staff.id)) {
+      walkingRefs.current.set(route.staff.id, { current: false })
+    }
+  }
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.1)
@@ -210,22 +220,24 @@ export default function StaffSimulation() {
       // Cutaway visibility: hide while mid-elevator-ride, hide while standing or
       // walking on a non-selected floor.
       let visibleFloorId = agent.floorId
+      let walkingNow = false
       if (agent.state === 'moving' && agent.segments) {
         const seg = agent.segments[agent.segmentIdx]
         visibleFloorId = seg.floorId
+        walkingNow = seg.kind === 'walk'
       }
+      const walkingRef = walkingRefs.current.get(route.staff.id)
+      if (walkingRef) walkingRef.current = walkingNow
+
       const visible = !cutaway || visibleFloorId === selectedFloor
       grp.visible = visible
 
       if (visible) {
         grp.position.copy(agent.worldPos)
         grp.rotation.y = agent.facing
-        if (agent.state === 'moving' && agent.segments) {
-          const seg = agent.segments[agent.segmentIdx]
-          if (seg.kind === 'walk') {
-            const bob = Math.sin(currentTime * 6 + agent.routeIdx) * 0.02
-            grp.position.y = agent.worldPos.y + bob
-          }
+        if (walkingNow) {
+          const bob = Math.sin(currentTime * 6 + agent.routeIdx) * 0.02
+          grp.position.y = agent.worldPos.y + bob
         }
       }
     }
@@ -242,7 +254,10 @@ export default function StaffSimulation() {
           }}
           visible={false}
         >
-          <StaffMesh staff={staff} />
+          <StaffMesh
+            staff={staff}
+            walkingRef={walkingRefs.current.get(staff.id)}
+          />
         </group>
       ))}
     </>
