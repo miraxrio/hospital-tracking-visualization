@@ -1,23 +1,30 @@
 import React, { Suspense } from 'react'
 import { Text3D, Center } from '@react-three/drei'
+import { HILLS, SIGN_HILL_INDEX } from './Mountains.jsx'
 
 const FONT_URL = `${import.meta.env.BASE_URL}fonts/helvetiker_bold.typeface.json`
 
+const SIGN_SIZE = 7
+
 function Sign() {
+  // Anchor the sign on top of the biggest back-center hill so it isn't
+  // floating in mid-air. Dome top = hill.r * hill.scaleY; we drop the text
+  // center half a glyph below so the letters embed slightly into the hill
+  // crest (Hollywood-sign style).
+  const hill = HILLS[SIGN_HILL_INDEX]
+  const domeTop = hill.r * hill.scaleY
+  const y = domeTop + SIGN_SIZE * 0.45
+
   return (
-    // Tucked behind the city in the -X / -Z quadrant so it reads as a
-    // backdrop on the far side, not as something perched next to the
-    // building. Slight Y rotation so the front face leans toward the
-    // default camera position.
-    <Center position={[-15, 24, -70]} rotation={[0, 0.55, 0]}>
+    <Center position={[hill.pos[0], y, hill.pos[2]]} rotation={[0, 0.45, 0]}>
       <Text3D
         font={FONT_URL}
-        size={5}
-        height={1.4}
+        size={SIGN_SIZE}
+        height={1.6}
         curveSegments={6}
         bevelEnabled
-        bevelThickness={0.12}
-        bevelSize={0.07}
+        bevelThickness={0.14}
+        bevelSize={0.08}
         bevelSegments={4}
       >
         AUDITCROWD
