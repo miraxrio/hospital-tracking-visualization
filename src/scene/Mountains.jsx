@@ -11,9 +11,10 @@ export const HILLS = [
   { pos: [25,  0, -135], r: 60, scaleY: 0.7,  color: '#8a6a47' },
   { pos: [60,  0, -118], r: 46, scaleY: 0.6,  color: '#9a7a56' },
   { pos: [-80, 0, -115], r: 48, scaleY: 0.65, color: '#9a7a56' },
-  // Sign hill — pulled closer to the back ridge and made taller so the
-  // letters sit higher and nearer the distant mountains.
-  { pos: [-15, 0, -92],  r: 32, scaleY: 0.7,  color: '#a8855e' },
+  // Sign hill — in front of the back ridge with clear space behind so the
+  // distant mountains don't overlap with / cover the letters. Tall enough
+  // (r 30, scaleY 0.75 -> dome ~22) for the sign to sit visibly high.
+  { pos: [-15, 0, -62],  r: 30, scaleY: 0.75, color: '#a8855e' },
 ]
 
 export const SIGN_HILL_INDEX = 5
