@@ -14,13 +14,13 @@ export default function Floor({ floor, active, cutawayFloorOnly, showLabels }) {
   // Wall / slab opacity depends on the view mode:
   //  - cutaway (single floor): make the structure see-through so the user can read rooms
   //  - all-floors (whole building): keep walls / slabs solid enough to read as a building
-  const slabOpacity = cutawayFloorOnly ? 0.8 : dimmed ? 0.85 : 1
-  const slabColor = dimmed ? '#94a3b8' : '#cbd5e1'
-  const stripeOpacity = cutawayFloorOnly ? 0.7 : dimmed ? 0.75 : 0.9
+  const slabOpacity = cutawayFloorOnly ? 0.8 : 1
+  const slabColor = dimmed ? '#b8c4d6' : '#cbd5e1'
+  const stripeOpacity = cutawayFloorOnly ? 0.7 : dimmed ? 0.88 : 0.95
   const stripeColor = dimmed ? '#334155' : '#475569'
 
   // Outer "glass" envelope opacity (active floor only)
-  const envelopeOpacity = cutawayFloorOnly ? 0.05 : 0.18
+  const envelopeOpacity = cutawayFloorOnly ? 0.05 : 0.22
 
   return (
     <group position={[0, y, 0]}>

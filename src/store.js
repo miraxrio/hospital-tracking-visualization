@@ -14,4 +14,5 @@ export const useStore = create((set, get) => ({
   setHovered: (bedId) => set({ hoveredBedId: bedId }),
   toggleLabels: () => set({ showLabels: !get().showLabels }),
   toggleCutaway: () => set({ cutawayFloorOnly: !get().cutawayFloorOnly }),
+  setCutaway: (value) => set({ cutawayFloorOnly: value }),
 }))

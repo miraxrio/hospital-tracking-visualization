@@ -14,10 +14,9 @@ export default function Room({ room, side, showLabels, dimmed, cutawayFloorOnly 
   const dept = departments[room.dept]
   // Wall opacity by mode:
   //  - cutaway active floor: very see-through so you can read the room
-  //  - all-floors active floor: solid building walls
-  //  - all-floors dimmed floor: still readable as a building, slightly fainter
-  const opacity = dimmed ? 0.55 : cutawayFloorOnly ? 0.22 : 0.7
-  const floorOpacity = dimmed ? 0.7 : 1.0
+  //  - all-floors: solid building walls; beacons / light pillars still glow above the roof
+  const opacity = cutawayFloorOnly ? 0.22 : dimmed ? 0.92 : 0.96
+  const floorOpacity = dimmed ? 0.95 : 1.0
 
   // Corridor side wall faces the corridor; we leave it shorter to let the user "see in"
   const corridorIsNorth = side === 'south' // room on south side, corridor is to its north (+z)
@@ -111,11 +110,7 @@ export default function Room({ room, side, showLabels, dimmed, cutawayFloorOnly 
         castShadow
       >
         <boxGeometry args={[0.32, 0.36, 0.32]} />
-        <meshStandardMaterial
-          color={dimmed ? '#475569' : '#cbd5e1'}
-          transparent
-          opacity={dimmed ? 0.4 : 1}
-        />
+        <meshStandardMaterial color={dimmed ? '#94a3b8' : '#cbd5e1'} />
       </mesh>
 
       {/* Beds */}
