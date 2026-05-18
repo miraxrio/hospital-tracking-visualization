@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
 import { hospital } from '../data/hospital.js'
@@ -11,44 +11,87 @@ function CameraRig() {
   const selectedFloorId = useStore((s) => s.selectedFloorId)
   const { camera } = useThree()
   const controls = useRef()
-  const target = useRef(new THREE.Vector3(0, 0, 0))
-  const desired = useRef(new THREE.Vector3(0, 0, 0))
-  const camDesired = useRef(new THREE.Vector3())
 
+  // One-shot transition state. While `active.current` is true we lerp camera + target
+  // toward `to*` over `duration` ms. Any user input on OrbitControls aborts the transition
+  // so we never fight the user's mouse/touch.
+  const active = useRef(false)
+  const startTime = useRef(0)
+  const duration = 700
+  const fromTarget = useRef(new THREE.Vector3())
+  const toTarget = useRef(new THREE.Vector3())
+  const fromPos = useRef(new THREE.Vector3())
+  const toPos = useRef(new THREE.Vector3())
+  const initialized = useRef(false)
+
+  // Re-target whenever the selected floor changes.
   useEffect(() => {
+    if (!controls.current) return
     const floor = hospital.floors.find((f) => f.id === selectedFloorId)
-    const y = (floor?.level ?? 0) * FLOOR_HEIGHT + 0.8
-    desired.current.set(0, y, 0)
-    camDesired.current.set(14, y + 5, 14)
-  }, [selectedFloorId])
+    const y = (floor?.level ?? 0) * FLOOR_HEIGHT + 1.2
 
-  // Smoothly interpolate target + camera position
-  useEffect(() => {
-    let raf
-    const tick = () => {
-      if (controls.current) {
-        controls.current.target.lerp(desired.current, 0.08)
-        camera.position.lerp(camDesired.current, 0.05)
-        controls.current.update()
-      }
-      raf = requestAnimationFrame(tick)
+    if (!initialized.current) {
+      controls.current.target.set(0, y, 0)
+      camera.position.set(16, y + 6, 16)
+      controls.current.update()
+      initialized.current = true
+      return
     }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [camera])
+
+    fromTarget.current.copy(controls.current.target)
+    toTarget.current.set(0, y, 0)
+    fromPos.current.copy(camera.position)
+    // Preserve the user's current orbit offset, just shift it to the new target's y.
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.current.target)
+    toPos.current.copy(toTarget.current).add(offset)
+    startTime.current = performance.now()
+    active.current = true
+  }, [selectedFloorId, camera])
+
+  // Abort transition the instant the user touches the controls.
+  useEffect(() => {
+    const c = controls.current
+    if (!c) return
+    const cancel = () => {
+      active.current = false
+    }
+    c.addEventListener('start', cancel)
+    return () => c.removeEventListener('start', cancel)
+  }, [])
+
+  useFrame(() => {
+    if (!active.current || !controls.current) return
+    const t = (performance.now() - startTime.current) / duration
+    if (t >= 1) {
+      controls.current.target.copy(toTarget.current)
+      camera.position.copy(toPos.current)
+      controls.current.update()
+      active.current = false
+      return
+    }
+    // easeInOutQuad
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+    controls.current.target.lerpVectors(fromTarget.current, toTarget.current, e)
+    camera.position.lerpVectors(fromPos.current, toPos.current, e)
+    controls.current.update()
+  })
 
   return (
     <OrbitControls
       ref={controls}
+      makeDefault
       enablePan
       enableZoom
       enableRotate
-      minDistance={6}
-      maxDistance={45}
-      maxPolarAngle={Math.PI / 2 - 0.05}
-      minPolarAngle={0.15}
+      minDistance={2.5}
+      maxDistance={80}
+      maxPolarAngle={Math.PI / 2 - 0.02}
+      minPolarAngle={0.02}
       enableDamping
       dampingFactor={0.08}
+      panSpeed={1.1}
+      rotateSpeed={0.9}
+      zoomSpeed={1.0}
     />
   )
 }
@@ -64,11 +107,11 @@ export default function Scene() {
       className="scene-canvas"
       shadows
       gl={{ antialias: true, powerPreference: 'high-performance' }}
-      camera={{ position: [14, 9, 14], fov: 45, near: 0.1, far: 200 }}
+      camera={{ position: [16, 9, 16], fov: 45, near: 0.1, far: 200 }}
       onPointerMissed={() => closePanel()}
     >
       <color attach="background" args={['#050810']} />
-      <fog attach="fog" args={['#050810', 35, 80]} />
+      <fog attach="fog" args={['#050810', 45, 110]} />
 
       {/* Lights */}
       <ambientLight intensity={0.45} />
@@ -97,6 +140,7 @@ export default function Scene() {
             key={floor.id}
             floor={floor}
             active={floor.id === selectedFloorId}
+            cutawayFloorOnly={cutawayFloorOnly}
             showLabels={showLabels}
           />
         ))}

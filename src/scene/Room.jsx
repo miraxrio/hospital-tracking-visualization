@@ -10,10 +10,14 @@ const WALL_T = 0.06
 
 // A room is a small enclosure with floor + 4 (partial) walls and 1–2 beds.
 // `side` determines which side of the corridor: 'south' (-z) or 'north' (+z).
-export default function Room({ room, side, showLabels, dimmed }) {
+export default function Room({ room, side, showLabels, dimmed, cutawayFloorOnly }) {
   const dept = departments[room.dept]
-  const opacity = dimmed ? 0.18 : 0.55
-  const floorOpacity = dimmed ? 0.4 : 1.0
+  // Wall opacity by mode:
+  //  - cutaway active floor: very see-through so you can read the room
+  //  - all-floors active floor: solid building walls
+  //  - all-floors dimmed floor: still readable as a building, slightly fainter
+  const opacity = dimmed ? 0.55 : cutawayFloorOnly ? 0.22 : 0.7
+  const floorOpacity = dimmed ? 0.7 : 1.0
 
   // Corridor side wall faces the corridor; we leave it shorter to let the user "see in"
   const corridorIsNorth = side === 'south' // room on south side, corridor is to its north (+z)

@@ -7,9 +7,20 @@ const FLOOR_D = 10
 const FLOOR_THICKNESS = 0.18
 export const FLOOR_HEIGHT = 3.5
 
-export default function Floor({ floor, active, showLabels }) {
+export default function Floor({ floor, active, cutawayFloorOnly, showLabels }) {
   const y = floor.level * FLOOR_HEIGHT
   const dimmed = !active
+
+  // Wall / slab opacity depends on the view mode:
+  //  - cutaway (single floor): make the structure see-through so the user can read rooms
+  //  - all-floors (whole building): keep walls / slabs solid enough to read as a building
+  const slabOpacity = cutawayFloorOnly ? 0.8 : dimmed ? 0.85 : 1
+  const slabColor = dimmed ? '#94a3b8' : '#cbd5e1'
+  const stripeOpacity = cutawayFloorOnly ? 0.7 : dimmed ? 0.75 : 0.9
+  const stripeColor = dimmed ? '#334155' : '#475569'
+
+  // Outer "glass" envelope opacity (active floor only)
+  const envelopeOpacity = cutawayFloorOnly ? 0.05 : 0.18
 
   return (
     <group position={[0, y, 0]}>
@@ -17,10 +28,10 @@ export default function Floor({ floor, active, showLabels }) {
       <mesh position={[0, 0, 0]} receiveShadow castShadow={!dimmed}>
         <boxGeometry args={[FLOOR_W, FLOOR_THICKNESS, FLOOR_D]} />
         <meshStandardMaterial
-          color={dimmed ? '#1a2238' : '#cbd5e1'}
+          color={slabColor}
           roughness={0.6}
           transparent
-          opacity={dimmed ? 0.35 : 1}
+          opacity={slabOpacity}
         />
       </mesh>
 
@@ -28,14 +39,15 @@ export default function Floor({ floor, active, showLabels }) {
       <mesh position={[0, FLOOR_THICKNESS / 2 + 0.001, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[FLOOR_W - 0.4, 1.4]} />
         <meshStandardMaterial
-          color={dimmed ? '#0f172a' : '#475569'}
+          color={stripeColor}
           transparent
-          opacity={dimmed ? 0.4 : 0.9}
+          opacity={stripeOpacity}
           roughness={0.7}
         />
       </mesh>
 
-      {/* Outer perimeter (thin glass-like walls) */}
+      {/* Outer perimeter (thin glass-like walls) — only the active floor draws them
+          to avoid stacking 3 envelopes on top of each other in all-floors view. */}
       {active && (
         <>
           {/* Front (south) */}
@@ -44,7 +56,7 @@ export default function Floor({ floor, active, showLabels }) {
             <meshStandardMaterial
               color="#60a5fa"
               transparent
-              opacity={0.06}
+              opacity={envelopeOpacity}
               roughness={0.1}
               metalness={0.4}
             />
@@ -55,7 +67,7 @@ export default function Floor({ floor, active, showLabels }) {
             <meshStandardMaterial
               color="#60a5fa"
               transparent
-              opacity={0.06}
+              opacity={envelopeOpacity}
               roughness={0.1}
               metalness={0.4}
             />
@@ -66,7 +78,7 @@ export default function Floor({ floor, active, showLabels }) {
             <meshStandardMaterial
               color="#60a5fa"
               transparent
-              opacity={0.06}
+              opacity={envelopeOpacity}
               roughness={0.1}
               metalness={0.4}
             />
@@ -77,7 +89,7 @@ export default function Floor({ floor, active, showLabels }) {
             <meshStandardMaterial
               color="#60a5fa"
               transparent
-              opacity={0.06}
+              opacity={envelopeOpacity}
               roughness={0.1}
               metalness={0.4}
             />
@@ -94,6 +106,7 @@ export default function Floor({ floor, active, showLabels }) {
             side={room.z < 0 ? 'south' : 'north'}
             showLabels={showLabels}
             dimmed={dimmed}
+            cutawayFloorOnly={cutawayFloorOnly}
           />
         ))}
       </group>

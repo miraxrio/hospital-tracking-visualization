@@ -37,18 +37,21 @@ export default function Bed({ bed, position, rotationY = 0, showLabels }) {
       <group
         ref={group}
         onPointerOver={(e) => {
+          if (!occupied) return
           e.stopPropagation()
           setHovered(bed.id)
           document.body.style.cursor = 'pointer'
         }}
         onPointerOut={(e) => {
+          if (!occupied) return
           e.stopPropagation()
           if (useStore.getState().hoveredBedId === bed.id) setHovered(null)
           document.body.style.cursor = 'default'
         }}
         onClick={(e) => {
+          if (!occupied) return
           e.stopPropagation()
-          if (occupied) selectBed(bed.id)
+          selectBed(bed.id)
         }}
       >
         {/* Bed frame */}
@@ -128,27 +131,32 @@ export default function Bed({ bed, position, rotationY = 0, showLabels }) {
           </group>
         )}
 
-        {/* Severity pulse beacon above bed */}
+        {/* Severity pulse beacon above bed — visible from a distance */}
         {occupied && (
           <group position={[0, 1.05, 0]}>
             <mesh ref={pulseRef}>
-              <sphereGeometry args={[0.12, 16, 16]} />
-              <meshBasicMaterial color={sevColor} transparent opacity={0.18} />
+              <sphereGeometry args={[0.18, 16, 16]} />
+              <meshBasicMaterial color={sevColor} transparent opacity={0.22} />
             </mesh>
             <mesh>
-              <sphereGeometry args={[0.06, 16, 16]} />
+              <sphereGeometry args={[0.09, 16, 16]} />
               <meshStandardMaterial
                 color={sevColor}
                 emissive={sevColor}
-                emissiveIntensity={1.4}
+                emissiveIntensity={2}
                 roughness={0.2}
               />
+            </mesh>
+            {/* Light pillar — helps spot occupied beds in all-floors view */}
+            <mesh position={[0, 0.55, 0]}>
+              <cylinderGeometry args={[0.025, 0.04, 1.1, 8, 1, true]} />
+              <meshBasicMaterial color={sevColor} transparent opacity={0.12} side={2} />
             </mesh>
           </group>
         )}
 
-        {/* Selection ring */}
-        {(selected || hovered) && (
+        {/* Selection ring (only for occupied beds) */}
+        {occupied && (selected || hovered) && (
           <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.55, 0.65, 32]} />
             <meshBasicMaterial color={selected ? '#38bdf8' : '#94a3b8'} transparent opacity={0.85} />
