@@ -6,39 +6,46 @@ import { SkeletonUtils } from 'three-stdlib'
 
 const BASE = import.meta.env.BASE_URL
 
+// Each GLB ships several clips: clip 0 is a 37s "talking on phone" idle
+// (long combined timeline) and clip 1 is the 1.03s Mixamo walk cycle.
+// Both files in a pair (idle/walk) contain the SAME clip set, so picking
+// the right index matters more than picking the right file.
+//
+// `scale` compensates for any baked-in armature scale. The doctor model has
+// an identity armature, the nurse model has a 0.01 armature scale, so it
+// needs a 100× larger prop scale to render at the same size.
 const MODELS = {
   doctor: {
-    idle: `${BASE}models/doctor idle.glb`,
-    walk: `${BASE}models/doctor walk.glb`,
+    idleUrl: `${BASE}models/doctor idle.glb`,
+    walkUrl: `${BASE}models/doctor walk.glb`,
+    idleClipIdx: 0,
+    walkClipIdx: 1,
     scale: 0.7,
   },
   nurse: {
-    idle: `${BASE}models/nurse idle.glb`,
-    walk: `${BASE}models/nurse walk.glb`,
-    scale: 0.7,
+    idleUrl: `${BASE}models/nurse idle.glb`,
+    walkUrl: `${BASE}models/nurse walk.glb`,
+    idleClipIdx: 0,
+    walkClipIdx: 1,
+    scale: 70,
   },
 }
 
 // Preload every model up front so the first sim tick doesn't stall.
 for (const m of Object.values(MODELS)) {
-  useGLTF.preload(encodeURI(m.idle))
-  useGLTF.preload(encodeURI(m.walk))
+  useGLTF.preload(encodeURI(m.idleUrl))
+  useGLTF.preload(encodeURI(m.walkUrl))
 }
 
-// Mixamo→Blender→glTF exports often include several animation clips per file:
-// a single ~1s cycle plus longer "combined timeline" clips (37s of mostly
-// static frames). Picking animations[0] gave us the static one — the doctor
-// looked stuck in idle even while "walking". Prefer the short cycle.
-function pickCycleClip(clips) {
-  if (!clips?.length) return null
-  const cycle = clips.find((c) => c.duration >= 0.5 && c.duration <= 5)
-  return cycle ?? clips[0]
+function pickClip(animations, idx) {
+  if (!animations?.length) return null
+  return animations[idx] ?? animations[0]
 }
 
 export default function AnimatedStaff({ role, walkingRef }) {
   const conf = MODELS[role] ?? MODELS.doctor
-  const idleGltf = useGLTF(encodeURI(conf.idle))
-  const walkGltf = useGLTF(encodeURI(conf.walk))
+  const idleGltf = useGLTF(encodeURI(conf.idleUrl))
+  const walkGltf = useGLTF(encodeURI(conf.walkUrl))
 
   const cloned = useMemo(() => {
     const c = SkeletonUtils.clone(idleGltf.scene)
@@ -55,8 +62,8 @@ export default function AnimatedStaff({ role, walkingRef }) {
   const mixer = useMemo(() => new AnimationMixer(cloned), [cloned])
 
   const actions = useMemo(() => {
-    const idleClip = pickCycleClip(idleGltf.animations)
-    const walkClip = pickCycleClip(walkGltf.animations)
+    const idleClip = pickClip(idleGltf.animations, conf.idleClipIdx)
+    const walkClip = pickClip(walkGltf.animations, conf.walkClipIdx)
     if (!idleClip || !walkClip) return null
     const idle = mixer.clipAction(idleClip)
     const walk = mixer.clipAction(walkClip)
@@ -66,7 +73,7 @@ export default function AnimatedStaff({ role, walkingRef }) {
     walk.time = Math.random() * walkClip.duration
     idle.play()
     return { idle, walk }
-  }, [idleGltf, walkGltf, mixer])
+  }, [idleGltf, walkGltf, mixer, conf.idleClipIdx, conf.walkClipIdx])
 
   const lastWalking = useRef(false)
   useFrame((_, delta) => {
