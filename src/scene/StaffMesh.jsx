@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react'
-import DoctorMesh from './DoctorMesh.jsx'
+import AnimatedStaff from './AnimatedStaff.jsx'
 
 const SKIN = '#fde68a'
 const COAT = '#f8fafc'
@@ -15,8 +15,7 @@ function bodyColor(staff) {
   return ROLE_BODY[staff.role] ?? '#38bdf8'
 }
 
-// Simple capsule character — used for nurses and as fallback while the doctor
-// FBX is loading.
+// Capsule fallback used only while the GLBs stream in.
 function CapsuleStaff({ staff }) {
   const isDoctor = staff.role !== 'Nurse'
   const color = bodyColor(staff)
@@ -42,33 +41,15 @@ function CapsuleStaff({ staff }) {
         <sphereGeometry args={[0.14, 16, 16]} />
         <meshStandardMaterial color={SKIN} />
       </mesh>
-      {isDoctor ? (
-        <mesh position={[0, 1.16, 0]} castShadow>
-          <cylinderGeometry args={[0.15, 0.15, 0.04, 16]} />
-          <meshStandardMaterial color={COAT} />
-        </mesh>
-      ) : (
-        <mesh position={[0, 1.18, 0]} castShadow rotation={[0, Math.PI / 4, 0]}>
-          <coneGeometry args={[0.13, 0.1, 4]} />
-          <meshStandardMaterial color={COAT} />
-        </mesh>
-      )}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.22, 0.28, 20]} />
-        <meshBasicMaterial color={color} transparent opacity={0.45} />
-      </mesh>
     </group>
   )
 }
 
 export default function StaffMesh({ staff, walkingRef }) {
-  const isDoctor = staff.role !== 'Nurse'
-  if (isDoctor) {
-    return (
-      <Suspense fallback={<CapsuleStaff staff={staff} />}>
-        <DoctorMesh walkingRef={walkingRef} />
-      </Suspense>
-    )
-  }
-  return <CapsuleStaff staff={staff} />
+  const role = staff.role === 'Nurse' ? 'nurse' : 'doctor'
+  return (
+    <Suspense fallback={<CapsuleStaff staff={staff} />}>
+      <AnimatedStaff role={role} walkingRef={walkingRef} />
+    </Suspense>
+  )
 }
