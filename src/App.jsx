@@ -8,6 +8,8 @@ import Controls from './ui/Controls.jsx'
 import PatientPanel from './ui/PatientPanel.jsx'
 import CityOverlay from './ui/CityOverlay.jsx'
 import TimeControls from './ui/TimeControls.jsx'
+import EventsLog from './ui/EventsLog.jsx'
+import Scheduler from './Scheduler.jsx'
 import { useStore } from './store.js'
 
 const FADE_MS = 320
@@ -46,6 +48,8 @@ export default function App() {
           <Legend />
           <Controls />
           <TimeControls />
+          {!selectedBedId && <EventsLog />}
+          <Scheduler />
           {!selectedBedId && (
             <div className="hint">
               Click a glowing bed to view the patient · drag to orbit · scroll to zoom

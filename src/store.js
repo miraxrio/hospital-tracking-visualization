@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { hospital } from './data/hospital.js'
 
+let eventCounter = 0
+
 export const useStore = create((set, get) => ({
   // Top-level view
   view: 'city',
@@ -21,6 +23,17 @@ export const useStore = create((set, get) => ({
   timeOfDay: 9 * 60,
   toggleSimulation: () => set((s) => ({ simulationRunning: !s.simulationRunning })),
   setTime: (minutes) => set({ timeOfDay: ((minutes % 1440) + 1440) % 1440 }),
+
+  // Live events feed. Newest-first; trimmed at 120.
+  events: [],
+  pushEvent: (ev) =>
+    set((s) => ({
+      events: [
+        { id: ++eventCounter, ...ev },
+        ...s.events,
+      ].slice(0, 120),
+    })),
+  clearEvents: () => set({ events: [] }),
 
   // ---- Transitions ----
   beginEnterHospital: () => set({ showOverlay: true, overlayDirection: 'to-hospital' }),

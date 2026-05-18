@@ -6,10 +6,12 @@ import {
   STAFF_ROUTES,
   staffStandPosition,
   loungeStandPosition,
+  loungeFor,
   elevatorPosition,
   isOnDuty,
   SIM_MINUTES_PER_SECOND,
 } from '../sim.js'
+import { patients } from '../data/hospital.js'
 import StaffMesh from './StaffMesh.jsx'
 
 const STAY_PATIENT_MIN = 10
@@ -174,6 +176,25 @@ export default function StaffSimulation() {
               agent.currentType = agent.nextType
               agent.floorId = agent.nextFloorId
               agent.segments = null
+
+              // Emit "arrived" event into the live feed
+              const push = useStore.getState().pushEvent
+              if (agent.currentType === 'patient') {
+                const v = route.visits[agent.routeIdx]
+                const patient = patients[v.patientId]
+                push({
+                  type: 'visit',
+                  time: currentTime,
+                  message: `${route.staff.name} → ${patient.name}`,
+                })
+              } else if (agent.currentType === 'lounge') {
+                const lounge = loungeFor(route.staff)
+                push({
+                  type: 'break',
+                  time: currentTime,
+                  message: `${route.staff.name} resting in the ${lounge.name}`,
+                })
+              }
             } else {
               agent.stateStart = currentTime
               const next = agent.segments[agent.segmentIdx]

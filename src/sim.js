@@ -171,6 +171,38 @@ export function onDutyCount(minutes) {
   )
 }
 
+// Convert a medication freq string into the simulated minutes-of-day when
+// doses are administered. PRN, drips, and "titrate" return an empty array
+// (no scheduled doses).
+export function medScheduleTimes(freq) {
+  if (!freq) return [9 * 60]
+  if (/prn|titrate|drip/i.test(freq)) return []
+  if (freq === 'Daily') return [8 * 60]
+  if (freq === 'BID') return [8 * 60, 20 * 60]
+  if (freq === 'TID') return [8 * 60, 14 * 60, 20 * 60]
+  if (freq === 'Q1H') return Array.from({ length: 24 }, (_, h) => h * 60)
+  if (freq === 'Q4H') return [6, 10, 14, 18, 22, 2].map((h) => h * 60)
+  if (freq === 'Q6H') return [6, 12, 18, 0].map((h) => h * 60)
+  if (freq === 'Q8H') return [6, 14, 22].map((h) => h * 60)
+  if (freq === 'Q12H') return [8, 20].map((h) => h * 60)
+  const m = /Q(\d+)H/i.exec(freq)
+  if (m) {
+    const step = Number(m[1])
+    const out = []
+    for (let h = 6; h < 6 + 24; h += step) out.push((h % 24) * 60)
+    return out
+  }
+  if (freq === 'Cycle day 1' || /pre-?chemo/i.test(freq)) return [10 * 60]
+  return [9 * 60]
+}
+
+// True when `target` falls in (prev, curr]. Handles midnight wrap.
+export function timeInRange(prev, curr, target) {
+  if (prev === curr) return false
+  if (prev < curr) return target > prev && target <= curr
+  return target > prev || target <= curr
+}
+
 // Sky / sun / ambient colors and intensities keyed by minutes-since-midnight.
 // Interpolated linearly between adjacent keys so the sky shifts smoothly as
 // simulated time advances.
