@@ -4,13 +4,7 @@ import { hospital } from './data/hospital.js'
 export const useStore = create((set, get) => ({
   // Top-level view
   view: 'city',
-  // Hospital info passed to CityCamera so it can fly the camera into the building.
-  // Cleared once the transition is done.
-  transitionTarget: null,
-  // Hospital geometry info exposed by CityModel after the GLB normalizes.
-  // The "Enter Hospital" button reads this so it can trigger the same fly.
-  hospitalInfo: null,
-  // Cross-fade overlay (covers the swap moment between scenes).
+  // Cross-fade overlay between scenes
   showOverlay: false,
   overlayDirection: null, // 'to-hospital' | 'to-city'
 
@@ -22,16 +16,11 @@ export const useStore = create((set, get) => ({
   cutawayFloorOnly: false,
 
   // ---- Transitions ----
-  setHospitalInfo: (info) => set({ hospitalInfo: info }),
-  flyToHospital: (info) => set({ transitionTarget: info }),
-  // Called when the city camera has finished flying — kicks off the cross-fade
   beginEnterHospital: () => set({ showOverlay: true, overlayDirection: 'to-hospital' }),
   beginReturnToCity: () => set({ showOverlay: true, overlayDirection: 'to-city' }),
-  // Run *under* the opaque overlay, after fade-in
   swapView: () =>
     set((s) => ({
       view: s.overlayDirection === 'to-hospital' ? 'hospital' : 'city',
-      transitionTarget: null,
       cutawayFloorOnly: false,
       selectedBedId: null,
     })),

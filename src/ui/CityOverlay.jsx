@@ -6,17 +6,7 @@ import { useStore } from '../store.js'
 export default function CityOverlay() {
   const stats = hospitalStats()
   const { active, progress } = useProgress()
-  const hospitalInfo = useStore((s) => s.hospitalInfo)
-  const flyToHospital = useStore((s) => s.flyToHospital)
   const beginEnterHospital = useStore((s) => s.beginEnterHospital)
-
-  const enter = () => {
-    if (hospitalInfo) {
-      flyToHospital(hospitalInfo) // camera flies, then CityScene calls beginEnterHospital
-    } else {
-      beginEnterHospital() // fallback: skip the fly, go straight to cross-fade
-    }
-  }
 
   return (
     <>
@@ -44,9 +34,9 @@ export default function CityOverlay() {
       <div className="city-cta">
         <div className="city-cta-title">Welcome to Northbrook</div>
         <div className="city-cta-body">
-          The hospital is marked with a red beacon. You can also enter directly:
+          Press the button to step into the hospital and explore every floor.
         </div>
-        <button className="enter-btn" onClick={enter} disabled={active}>
+        <button className="enter-btn" onClick={beginEnterHospital} disabled={active}>
           {active ? 'Loading city…' : 'Enter Hospital →'}
         </button>
       </div>
