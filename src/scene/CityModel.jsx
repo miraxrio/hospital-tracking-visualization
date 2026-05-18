@@ -24,10 +24,9 @@ export default function CityModel({ onModelReady }) {
     if (!scene || !wrapperRef.current || initialized.current) return
     initialized.current = true
 
-    // Rotate the city 180° around Y so the back face (which had the mountains
-    // appearing on the right) now faces the camera, putting the ridge on
-    // the opposite side of the building.
-    scene.rotation.y = Math.PI
+    // Rotate the city 270° around Y so the right face is what's pointing
+    // toward the camera (mountain ridge now sits on the other side).
+    scene.rotation.y = Math.PI * 1.5
     scene.updateMatrixWorld(true)
 
     // Mark mesh shadow flags + collect cloud groups for animation.
