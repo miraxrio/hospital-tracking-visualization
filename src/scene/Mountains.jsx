@@ -1,24 +1,21 @@
 import React, { useMemo } from 'react'
 
-// Big rolling hills planted strictly BEHIND the city (z = -75 ..-115)
-// and within the city's horizontal silhouette so they read as the back
-// horizon rather than as something sitting next to the city. Hemispheres
-// give a soft non-pointy dome shape; brown earth-tone palette + flat
-// shading matches the low-poly city style.
-//
-// signMount = the index of the hill that the AuditCrowd sign perches on
-// — kept in sync with AuditCrowdSign.jsx via the export below.
+// 5 distant hills strictly past the city's back edge (city z-range ends at
+// -45; these start at z = -110) so they read as a far horizon, not as
+// something sitting alongside the city. Plus 1 small hill right behind
+// the back wall where the AuditCrowd sign perches.
 export const HILLS = [
-  { pos: [-40, 0, -100], r: 48, scaleY: 0.65, color: '#7b573b' },
-  { pos: [-5,  0, -115], r: 60, scaleY: 0.7,  color: '#6b4928' }, // sign sits here
-  { pos: [30,  0, -100], r: 46, scaleY: 0.65, color: '#8a6a47' },
-  { pos: [-65, 0, -78],  r: 34, scaleY: 0.55, color: '#9a7a56' },
-  { pos: [55,  0, -78],  r: 34, scaleY: 0.55, color: '#9a7a56' },
-  { pos: [-25, 0, -68],  r: 18, scaleY: 0.45, color: '#a8855e' },
-  { pos: [20,  0, -68],  r: 18, scaleY: 0.45, color: '#a8855e' },
+  // Far ridge — backdrop
+  { pos: [-55, 0, -130], r: 55, scaleY: 0.7,  color: '#7b573b' },
+  { pos: [-15, 0, -145], r: 72, scaleY: 0.75, color: '#6b4928' },
+  { pos: [25,  0, -135], r: 60, scaleY: 0.7,  color: '#8a6a47' },
+  { pos: [60,  0, -118], r: 46, scaleY: 0.6,  color: '#9a7a56' },
+  { pos: [-80, 0, -115], r: 48, scaleY: 0.65, color: '#9a7a56' },
+  // Close hill — sign perches here, just behind the city's back wall
+  { pos: [-12, 0, -68],  r: 22, scaleY: 0.55, color: '#a8855e' },
 ]
 
-export const SIGN_HILL_INDEX = 1
+export const SIGN_HILL_INDEX = 5
 
 export default function Mountains() {
   const hills = useMemo(() => HILLS, [])
@@ -32,8 +29,7 @@ export default function Mountains() {
           castShadow
           receiveShadow
         >
-          {/* Upper hemisphere — domed silhouette, not a pointy cone. */}
-          <sphereGeometry args={[h.r, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <sphereGeometry args={[h.r, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
           <meshStandardMaterial color={h.color} roughness={0.95} flatShading />
         </mesh>
       ))}
