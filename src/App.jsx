@@ -7,6 +7,7 @@ import Legend from './ui/Legend.jsx'
 import Controls from './ui/Controls.jsx'
 import PatientPanel from './ui/PatientPanel.jsx'
 import CityOverlay from './ui/CityOverlay.jsx'
+import TimeControls from './ui/TimeControls.jsx'
 import { useStore } from './store.js'
 
 const FADE_MS = 320
@@ -44,6 +45,7 @@ export default function App() {
           <FloorSelector />
           <Legend />
           <Controls />
+          <TimeControls />
           {!selectedBedId && (
             <div className="hint">
               Click a glowing bed to view the patient · drag to orbit · scroll to zoom

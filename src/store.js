@@ -15,6 +15,13 @@ export const useStore = create((set, get) => ({
   showLabels: true,
   cutawayFloorOnly: false,
 
+  // Simulation state
+  simulationRunning: false,
+  // Time of day in minutes [0, 1440). Default to 09:00.
+  timeOfDay: 9 * 60,
+  toggleSimulation: () => set((s) => ({ simulationRunning: !s.simulationRunning })),
+  setTime: (minutes) => set({ timeOfDay: ((minutes % 1440) + 1440) % 1440 }),
+
   // ---- Transitions ----
   beginEnterHospital: () => set({ showOverlay: true, overlayDirection: 'to-hospital' }),
   beginReturnToCity: () => set({ showOverlay: true, overlayDirection: 'to-city' }),

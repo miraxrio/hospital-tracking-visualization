@@ -6,6 +6,7 @@ import { hospital } from '../data/hospital.js'
 import { useStore } from '../store.js'
 import Floor, { FLOOR_HEIGHT } from './Floor.jsx'
 import Ground from './Ground.jsx'
+import StaffSimulation from './StaffSimulation.jsx'
 
 function CameraRig() {
   const selectedFloorId = useStore((s) => s.selectedFloorId)
@@ -144,6 +145,8 @@ export default function Scene() {
             showLabels={showLabels}
           />
         ))}
+
+      <StaffSimulation />
 
       <ContactShadows
         position={[0, -0.49, 0]}
