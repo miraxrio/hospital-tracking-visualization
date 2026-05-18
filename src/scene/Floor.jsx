@@ -11,16 +11,16 @@ export default function Floor({ floor, active, cutawayFloorOnly, showLabels }) {
   const y = floor.level * FLOOR_HEIGHT
   const dimmed = !active
 
-  // Wall / slab opacity depends on the view mode:
-  //  - cutaway (single floor): make the structure see-through so the user can read rooms
-  //  - all-floors (whole building): keep walls / slabs solid enough to read as a building
-  const slabOpacity = cutawayFloorOnly ? 0.8 : 1
+  // Wall / slab opacity depends on the view mode. The CITY scene now provides
+  // the building's outer shell, so hospital all-floors view can be more
+  // see-through so beds + departments read at a glance.
+  const slabOpacity = cutawayFloorOnly ? 0.7 : dimmed ? 0.6 : 0.85
   const slabColor = dimmed ? '#b8c4d6' : '#cbd5e1'
-  const stripeOpacity = cutawayFloorOnly ? 0.7 : dimmed ? 0.88 : 0.95
+  const stripeOpacity = cutawayFloorOnly ? 0.6 : dimmed ? 0.55 : 0.85
   const stripeColor = dimmed ? '#334155' : '#475569'
 
   // Outer "glass" envelope opacity (active floor only)
-  const envelopeOpacity = cutawayFloorOnly ? 0.05 : 0.22
+  const envelopeOpacity = cutawayFloorOnly ? 0.04 : 0.12
 
   return (
     <group position={[0, y, 0]}>

@@ -86,19 +86,23 @@ export default function CityModel({ onHospitalClick, onModelReady }) {
     let hMin = new THREE.Vector3()
 
     if (refMesh) {
+      // Use Plane.014_Colore_0's matrixWorld TRANSLATION (its transform position),
+      // not its bbox center. The mesh vertices are off-center in local space
+      // (Y: -9.79 to 0), so setFromObject().getCenter() lands well outside the
+      // actual building. The matrix translation, however, is precisely at the
+      // helipad's anchor point on the building roof.
       refMesh.updateWorldMatrix(true, false)
+      const refPos = new THREE.Vector3().setFromMatrixPosition(refMesh.matrixWorld)
       const refBox = new THREE.Box3().setFromObject(refMesh)
-      const refCenter = refBox.getCenter(new THREE.Vector3())
       const refSize = refBox.getSize(new THREE.Vector3())
 
-      // refCenter is the helipad center on the roof. The building extends below it.
-      // Inflate the horizontal footprint so the hitbox covers the whole building.
-      const footprint = Math.max(refSize.x, refSize.z) * 2.8
-      const heightFromGround = Math.max(refCenter.y, 1)
-      hCenter.set(refCenter.x, heightFromGround / 2, refCenter.z)
-      hTop.set(refCenter.x, heightFromGround, refCenter.z)
-      hMin.set(refCenter.x - footprint / 2, 0, refCenter.z - footprint / 2)
-      hSize.set(footprint, heightFromGround, footprint)
+      const footprint = Math.max(refSize.x, refSize.z, 4)
+      const buildingHeight = Math.max(refPos.y, 4)
+
+      hCenter.set(refPos.x, buildingHeight / 2, refPos.z)
+      hTop.set(refPos.x, buildingHeight, refPos.z)
+      hMin.set(refPos.x - footprint / 2, 0, refPos.z - footprint / 2)
+      hSize.set(footprint, buildingHeight, footprint)
     } else if (hospitalNode) {
       // Fallback: tight bbox around the hospital node's near children.
       hospitalNode.updateWorldMatrix(true, false)
