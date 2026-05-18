@@ -63,6 +63,14 @@ export default function CityScene() {
 
       <Environment preset="park" />
 
+      {/* Brown ground filling the area below the floating city — same earth
+          tone as the city's own platform so the city looks rooted in the
+          landscape instead of floating in mid-sky. */}
+      <mesh position={[0, 1.6, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[800, 800]} />
+        <meshStandardMaterial color="#6b4928" roughness={0.95} />
+      </mesh>
+
       <Suspense fallback={null}>
         <CityModel onModelReady={({ bbox }) => setCityBbox(bbox)} />
       </Suspense>

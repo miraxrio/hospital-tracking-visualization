@@ -32,7 +32,7 @@ export default function CityOverlay() {
       </div>
 
       <div className="city-cta">
-        <div className="city-cta-title">Welcome to Northbrook</div>
+        <div className="city-cta-title">Welcome to AuditCrowd</div>
         <div className="city-cta-body">
           Press the button to step into the hospital and explore every floor.
         </div>

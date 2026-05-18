@@ -304,7 +304,7 @@ export const patients = {
 const makeRoom = (id, dept, x, z, beds) => ({ id, dept, x, z, beds })
 
 export const hospital = {
-  name: 'Northbrook Regional Medical Center',
+  name: 'AuditCrowd Regional Medical Center',
   floors: [
     {
       id: 'F1',
