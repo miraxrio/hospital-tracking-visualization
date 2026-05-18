@@ -22,10 +22,18 @@ export default function CityModel({ onHospitalClick, onModelReady }) {
   const [hospitalInfo, setHospitalInfo] = useState(null)
   const [hovered, setHovered] = useState(false)
   const originalEmissive = useRef(new Map())
+  const initialized = useRef(false)
+  // Keep the latest callback in a ref so the init effect can call it
+  // without re-firing every time the parent renders a new function.
+  const onModelReadyRef = useRef(onModelReady)
+  useEffect(() => {
+    onModelReadyRef.current = onModelReady
+  }, [onModelReady])
 
   // One-time setup: detect hospital meshes, normalize scene to target size, compute marker pose.
   useEffect(() => {
-    if (!scene || !wrapperRef.current) return
+    if (!scene || !wrapperRef.current || initialized.current) return
+    initialized.current = true
 
     // 1. Mark hospital meshes via parent-name walk.
     const hospitalMeshes = []
@@ -92,8 +100,8 @@ export default function CityModel({ onHospitalClick, onModelReady }) {
 
     // 6. Final scene bbox for camera auto-fit.
     const finalBbox = new THREE.Box3().setFromObject(wrapperRef.current)
-    onModelReady?.({ bbox: finalBbox })
-  }, [scene, onModelReady])
+    onModelReadyRef.current?.({ bbox: finalBbox })
+  }, [scene])
 
   // Hover effect — boost emissive on hospital meshes.
   useEffect(() => {
