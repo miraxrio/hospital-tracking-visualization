@@ -730,32 +730,64 @@ button {
 
 /* ---------- City scene ---------- */
 
-.city-hint {
+.city-cta {
   position: absolute;
-  bottom: 22px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--panel);
+  background: rgba(15, 23, 42, 0.88);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 22px;
+  border-radius: 16px;
+  padding: 18px 26px 20px;
   z-index: 5;
   text-align: center;
-  pointer-events: none;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  min-width: 340px;
 }
 
-.city-hint-title {
+.city-cta-title {
   font-weight: 700;
-  font-size: 14px;
-  margin-bottom: 3px;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: #fff;
 }
 
-.city-hint-body {
+.city-cta-body {
   font-size: 12px;
   color: var(--text-1);
+  margin-bottom: 14px;
+}
+
+.enter-btn {
+  background: linear-gradient(120deg, #38bdf8 0%, #6366f1 100%);
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.enter-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 14px 40px rgba(56, 189, 248, 0.6);
+}
+
+.enter-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.enter-btn:disabled {
+  filter: grayscale(0.5) brightness(0.7);
+  cursor: wait;
+  box-shadow: none;
 }
 
 .hospital-marker {

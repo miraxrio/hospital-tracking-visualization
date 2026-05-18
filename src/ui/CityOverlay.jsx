@@ -1,10 +1,22 @@
 import React from 'react'
 import { useProgress } from '@react-three/drei'
 import { hospital, hospitalStats } from '../data/hospital.js'
+import { useStore } from '../store.js'
 
 export default function CityOverlay() {
   const stats = hospitalStats()
   const { active, progress } = useProgress()
+  const hospitalInfo = useStore((s) => s.hospitalInfo)
+  const flyToHospital = useStore((s) => s.flyToHospital)
+  const beginEnterHospital = useStore((s) => s.beginEnterHospital)
+
+  const enter = () => {
+    if (hospitalInfo) {
+      flyToHospital(hospitalInfo) // camera flies, then CityScene calls beginEnterHospital
+    } else {
+      beginEnterHospital() // fallback: skip the fly, go straight to cross-fade
+    }
+  }
 
   return (
     <>
@@ -29,11 +41,14 @@ export default function CityOverlay() {
         </div>
       </div>
 
-      <div className="city-hint">
-        <div className="city-hint-title">Welcome to Northbrook</div>
-        <div className="city-hint-body">
-          Click the building marked with the red cross to enter the hospital.
+      <div className="city-cta">
+        <div className="city-cta-title">Welcome to Northbrook</div>
+        <div className="city-cta-body">
+          The hospital is marked with a red beacon. You can also enter directly:
         </div>
+        <button className="enter-btn" onClick={enter} disabled={active}>
+          {active ? 'Loading city…' : 'Enter Hospital →'}
+        </button>
       </div>
 
       {active && (

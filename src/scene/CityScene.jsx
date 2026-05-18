@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
-import { OrbitControls, Environment, Sky, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
 import * as THREE from 'three'
 import CityModel from './CityModel.jsx'
 import { useStore } from '../store.js'
@@ -98,13 +98,14 @@ export default function CityScene() {
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       camera={{ position: HOME_POS.toArray(), fov: 45, near: 0.1, far: 1000 }}
     >
-      <color attach="background" args={['#cfe5f7']} />
-      <fog attach="fog" args={['#cfe5f7', 110, 260]} />
+      {/* Bright blue sky background — no fog so the sky stays vivid */}
+      <color attach="background" args={['#79b8ec']} />
 
-      <ambientLight intensity={0.55} />
+      <ambientLight intensity={0.7} />
+      <hemisphereLight args={['#cfe9ff', '#3b6b8a', 0.55]} />
       <directionalLight
         position={[40, 60, 30]}
-        intensity={1.2}
+        intensity={1.4}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -113,9 +114,8 @@ export default function CityScene() {
         shadow-camera-top={60}
         shadow-camera-bottom={-60}
       />
-      <directionalLight position={[-20, 18, -18]} intensity={0.35} color="#bae6fd" />
+      <directionalLight position={[-20, 18, -18]} intensity={0.4} color="#bae6fd" />
 
-      <Sky sunPosition={[80, 40, 30]} turbidity={6} rayleigh={1.2} mieCoefficient={0.005} />
       <Environment preset="park" />
 
       <Suspense fallback={null}>
